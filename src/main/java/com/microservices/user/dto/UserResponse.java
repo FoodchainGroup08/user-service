@@ -1,0 +1,35 @@
+package com.microservices.user.dto;
+
+import com.microservices.user.entity.User;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class UserResponse {
+
+    private UUID id;
+    private String email;
+    private User.Role role;
+    private UUID branchId;
+    private boolean isActive;
+    private LocalDateTime createdAt;
+
+    public static UserResponse from(User user) {
+        return UserResponse.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .role(user.getRole())
+                .branchId(user.getBranchId())
+                .isActive(user.isActive())
+                .createdAt(user.getCreatedAt())
+                .build();
+    }
+}
