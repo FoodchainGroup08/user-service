@@ -55,7 +55,6 @@ jwt:
   refresh-token-expiry-ms: 604800000  # 7 days
 
 app:
-  frontend-url: ${FRONTEND_URL:http://localhost:5173}
   oauth2:
     enabled: ${OAUTH2_ENABLED:false}
     # Redirect URL after OAuth2 login (frontend URL)

@@ -39,17 +39,20 @@ public class SecurityConfig {
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 // Public auth endpoints (paths are relative to context-path /api)
-                .requestMatchers(HttpMethod.POST, "/v1/auth/login").permitAll()
-                .requestMatchers(HttpMethod.POST, "/v1/auth/register").permitAll()
-                .requestMatchers(HttpMethod.POST, "/v1/auth/refresh").permitAll()
-                .requestMatchers(HttpMethod.POST, "/v1/auth/logout").permitAll()
-                // OAuth2
+                .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
+                .requestMatchers(HttpMethod.POST, "/auth/register").permitAll()
+                .requestMatchers(HttpMethod.POST, "/auth/refresh").permitAll()
+                .requestMatchers(HttpMethod.POST, "/auth/logout").permitAll()
+                .requestMatchers(HttpMethod.POST, "/auth/google").permitAll()
+                .requestMatchers(HttpMethod.POST, "/auth/forgot-password").permitAll()
+                .requestMatchers(HttpMethod.POST, "/auth/reset-password").permitAll()
+                // OAuth2 server-side redirect flow
                 .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                 // Actuator
                 .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                 // Role-based access
-                .requestMatchers(HttpMethod.GET, "/v1/users").hasRole("HEAD_OFFICE_ADMIN")
-                .requestMatchers(HttpMethod.PATCH, "/v1/users/*").hasAnyRole("HEAD_OFFICE_ADMIN", "BRANCH_MANAGER")
+                .requestMatchers(HttpMethod.GET, "/users").hasRole("HEAD_OFFICE_ADMIN")
+                .requestMatchers(HttpMethod.PATCH, "/users/*").hasAnyRole("HEAD_OFFICE_ADMIN", "BRANCH_MANAGER")
                 // All other requests require authentication
                 .anyRequest().authenticated()
             )

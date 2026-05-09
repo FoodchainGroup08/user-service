@@ -23,14 +23,14 @@ import java.io.IOException;
 import java.util.Map;
 
 /**
- * Intercepts POST /api/v1/auth/login. Authenticates credentials via AuthenticationManager,
+ * Intercepts POST /api/auth/login. Authenticates credentials via AuthenticationManager,
  * then writes a JWT AuthResponse. All other paths are skipped via shouldNotFilter.
  */
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private static final String LOGIN_PATH = "/v1/auth/login";
+    private static final String LOGIN_PATH = "/auth/login";
 
     private final AuthenticationManager authenticationManager;
     private final AuthService authService;
