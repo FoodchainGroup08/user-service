@@ -61,6 +61,15 @@ app:
     # Redirect URL after OAuth2 login (frontend URL)
     redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:5173/oauth2/callback}
 
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+    display-request-duration: true
+  api-docs:
+    path: /v3/api-docs
+
 management:
   endpoints:
     web:
