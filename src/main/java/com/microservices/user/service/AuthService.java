@@ -17,6 +17,15 @@ public interface AuthService {
 
     void logout(String accessToken, String refreshToken);
 
-    /** Stores a new refresh token in Redis. Returns the token string. */
+    /** Stores a new refresh token in Redis and returns the token string. */
     String createRefreshToken(User user);
+
+    /** Generates a one-time reset token (stored in Redis, 1-hour TTL) and logs the reset link. */
+    void forgotPassword(String email);
+
+    /** Validates the reset token, encodes and saves the new password, then invalidates the token. */
+    void resetPassword(String token, String newPassword);
+
+    /** Validates a Google ID token, then finds or creates a local user and returns a JWT pair. */
+    AuthResponse googleAuth(String idToken);
 }

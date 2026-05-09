@@ -19,6 +19,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.UUID;
 
@@ -39,6 +40,7 @@ class AuthControllerTest {
     @MockBean private AuthService authService;
     @MockBean private UserService userService;
     @MockBean private StringRedisTemplate stringRedisTemplate;
+    @MockBean private RestTemplate restTemplate;
 
     private UserResponse sampleUserResponse;
 
@@ -52,7 +54,7 @@ class AuthControllerTest {
                 .build();
     }
 
-    // ---- POST /api/v1/auth/register ----
+    // ---- POST /api/auth/register ----
 
     @Test
     @DisplayName("register: returns 201 Created with UserResponse for a valid payload")
@@ -63,7 +65,7 @@ class AuthControllerTest {
 
         when(authService.register(any(RegisterRequest.class))).thenReturn(sampleUserResponse);
 
-        mockMvc.perform(post("/api/v1/auth/register")
+        mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -78,7 +80,7 @@ class AuthControllerTest {
         request.setEmail("not-an-email");
         request.setPassword("securePass1");
 
-        mockMvc.perform(post("/api/v1/auth/register")
+        mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -91,7 +93,7 @@ class AuthControllerTest {
         request.setEmail("");
         request.setPassword("securePass1");
 
-        mockMvc.perform(post("/api/v1/auth/register")
+        mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -104,7 +106,7 @@ class AuthControllerTest {
         request.setEmail("user@example.com");
         request.setPassword("short");
 
-        mockMvc.perform(post("/api/v1/auth/register")
+        mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -119,13 +121,13 @@ class AuthControllerTest {
 
         when(authService.register(any())).thenThrow(new IllegalArgumentException("Email already registered"));
 
-        mockMvc.perform(post("/api/v1/auth/register")
+        mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
     }
 
-    // ---- POST /api/v1/auth/refresh ----
+    // ---- POST /api/auth/refresh ----
 
     @Test
     @DisplayName("refresh: returns 200 OK with new tokens for a valid refresh token")
@@ -142,7 +144,7 @@ class AuthControllerTest {
                 .build();
         when(authService.refresh(any(RefreshTokenRequest.class))).thenReturn(authResponse);
 
-        mockMvc.perform(post("/api/v1/auth/refresh")
+        mockMvc.perform(post("/api/auth/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -156,20 +158,20 @@ class AuthControllerTest {
         RefreshTokenRequest request = new RefreshTokenRequest();
         request.setRefreshToken("");
 
-        mockMvc.perform(post("/api/v1/auth/refresh")
+        mockMvc.perform(post("/api/auth/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
     }
 
-    // ---- POST /api/v1/auth/logout ----
+    // ---- POST /api/auth/logout ----
 
     @Test
     @DisplayName("logout: returns 204 No Content")
     void logout_returns204() throws Exception {
         doNothing().when(authService).logout(any(), any());
 
-        mockMvc.perform(post("/api/v1/auth/logout")
+        mockMvc.perform(post("/api/auth/logout")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent());
     }
@@ -182,7 +184,7 @@ class AuthControllerTest {
         RefreshTokenRequest body = new RefreshTokenRequest();
         body.setRefreshToken("some-refresh-token");
 
-        mockMvc.perform(post("/api/v1/auth/logout")
+        mockMvc.perform(post("/api/auth/logout")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isNoContent());

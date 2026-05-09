@@ -29,6 +29,9 @@ public class User implements UserDetails {
     @Column(name = "password_hash")
     private String passwordHash;
 
+    @Column(name = "name")
+    private String name;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default

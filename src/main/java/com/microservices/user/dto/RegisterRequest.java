@@ -11,6 +11,8 @@ import java.util.UUID;
 @Data
 public class RegisterRequest {
 
+    private String name;
+
     @NotBlank(message = "Email is required")
     @Email(message = "Invalid email format")
     private String email;
