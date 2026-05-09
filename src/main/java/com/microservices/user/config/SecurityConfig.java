@@ -50,6 +50,8 @@ public class SecurityConfig {
                 .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                 // Actuator
                 .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                // Swagger UI
+                .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                 // Role-based access
                 .requestMatchers(HttpMethod.GET, "/users").hasRole("HEAD_OFFICE_ADMIN")
                 .requestMatchers(HttpMethod.PATCH, "/users/*").hasAnyRole("HEAD_OFFICE_ADMIN", "BRANCH_MANAGER")
