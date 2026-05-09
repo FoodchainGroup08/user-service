@@ -25,7 +25,7 @@ services:
     restart: on-failure
     environment:
       MYSQL_ROOT_PASSWORD: devpassword
-      MYSQL_DATABASE: userdb
+      MYSQL_DATABASE: user_db
     ports:
       - "3307:3306"
     volumes:
@@ -72,7 +72,7 @@ services:
     environment:
       # Datasource
       DB_HOST: mysql
-      DB_NAME: userdb
+      DB_NAME: user_db
       DB_USERNAME: root
       DB_PASSWORD: devpassword
       # Redis
