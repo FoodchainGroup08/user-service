@@ -1,8 +1,8 @@
 -------------------------------------------------------------------------------
 Test set: com.microservices.user.filter.JwtAuthenticationFilterTest
 -------------------------------------------------------------------------------
-Tests run: 8, Failures: 2, Errors: 1, Skipped: 0, Time elapsed: 0.340 s <<< FAILURE! -- in com.microservices.user.filter.JwtAuthenticationFilterTest
-com.microservices.user.filter.JwtAuthenticationFilterTest.shouldNotFilter_returnsFalse_forLoginPost -- Time elapsed: 0.004 s <<< FAILURE!
+Tests run: 8, Failures: 2, Errors: 1, Skipped: 0, Time elapsed: 0.039 s <<< FAILURE! -- in com.microservices.user.filter.JwtAuthenticationFilterTest
+com.microservices.user.filter.JwtAuthenticationFilterTest.shouldNotFilter_returnsFalse_forLoginPost -- Time elapsed: 0.002 s <<< FAILURE!
 org.opentest4j.AssertionFailedError: expected: <false> but was: <true>
 	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
 	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
@@ -15,7 +15,7 @@ org.opentest4j.AssertionFailedError: expected: <false> but was: <true>
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
 
-com.microservices.user.filter.JwtAuthenticationFilterTest.doFilterInternal_returns200WithAuthResponse_forValidCredentials -- Time elapsed: 0.004 s <<< FAILURE!
+com.microservices.user.filter.JwtAuthenticationFilterTest.doFilterInternal_returns200WithAuthResponse_forValidCredentials -- Time elapsed: 0.003 s <<< FAILURE!
 org.opentest4j.AssertionFailedError: expected: <200> but was: <403>
 	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
 	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
@@ -28,7 +28,7 @@ org.opentest4j.AssertionFailedError: expected: <200> but was: <403>
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
 
-com.microservices.user.filter.JwtAuthenticationFilterTest.doFilterInternal_doesNotCallChain_onSuccessfulLogin -- Time elapsed: 0.022 s <<< ERROR!
+com.microservices.user.filter.JwtAuthenticationFilterTest.doFilterInternal_doesNotCallChain_onSuccessfulLogin -- Time elapsed: 0.010 s <<< ERROR!
 org.mockito.exceptions.misusing.UnnecessaryStubbingException: 
 
 Unnecessary stubbings detected.
