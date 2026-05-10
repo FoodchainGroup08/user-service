@@ -135,11 +135,22 @@ class AdminUserControllerTest {
     }
 
     @Test
-    @DisplayName("GET /admin/users: returns 403 when X-User-Role header is missing")
-    void getAllUsers_returns403_whenRoleHeaderMissing() throws Exception {
+    @DisplayName("GET /admin/users: returns 403 when X-User-Role header is missing and JWT is not admin")
+    void getAllUsers_returns403_whenRoleHeaderMissing_andJwtNotAdmin() throws Exception {
         mockMvc.perform(get("/api/v1/admin/users").contextPath("/api")
                         .header(HttpHeaders.AUTHORIZATION, bearer("CUSTOMER")))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("GET /admin/users: returns 200 when X-User-Role is missing but JWT is HEAD_OFFICE_ADMIN")
+    void getAllUsers_returns200_whenRoleHeaderMissing_butJwtIsHeadOfficeAdmin() throws Exception {
+        when(userService.findAllUsers(null)).thenReturn(List.of(customerResponse));
+
+        mockMvc.perform(get("/api/v1/admin/users").contextPath("/api")
+                        .header(HttpHeaders.AUTHORIZATION, bearer("HEAD_OFFICE_ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1));
     }
 
     // ---- GET /admin/users/{id} -------------------------------------------

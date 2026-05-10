@@ -11,6 +11,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -40,10 +42,38 @@ public class AdminUserController {
 
     // ---- Helper ----------------------------------------------------------
 
+    /**
+     * Prefers {@code X-User-Role} when present (API gateway). Otherwise uses the JWT-derived role from Spring Security
+     * so calling user-service directly with {@code Authorization: Bearer} works.
+     */
+    private String resolveUserRole(String headerRole, Authentication authentication) {
+        if (headerRole != null && !headerRole.isBlank()) {
+            return headerRole.trim();
+        }
+        if (authentication == null) {
+            return null;
+        }
+        return authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .filter(a -> a.startsWith("ROLE_"))
+                .map(a -> a.substring(5))
+                .findFirst()
+                .orElse(null);
+    }
+
     private void assertAdmin(String userRole) {
-        if (!"HEAD_OFFICE_ADMIN".equals(userRole) && !"Admin".equals(userRole)) {
+        if (userRole == null) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admin access required");
         }
+        if (!isAdminRole(userRole)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admin access required");
+        }
+    }
+
+    private boolean isAdminRole(String role) {
+        return "HEAD_OFFICE_ADMIN".equals(role)
+                || "OFFICE_ADMIN".equals(role)
+                || "Admin".equals(role);
     }
 
     private AdminUserResponse toAdminResponse(com.microservices.user.dto.UserResponse u) {
@@ -73,9 +103,10 @@ public class AdminUserController {
             @Parameter(description = "X-User-Role header forwarded by the API gateway")
             @RequestHeader(value = "X-User-Role", required = false) String userRole,
             @Parameter(description = "Filter by role display name, e.g. Customer")
-            @RequestParam(required = false) String role) {
+            @RequestParam(required = false) String role,
+            Authentication authentication) {
 
-        assertAdmin(userRole);
+        assertAdmin(resolveUserRole(userRole, authentication));
 
         User.Role roleFilter = null;
         if (role != null && !role.isBlank()) {
@@ -107,9 +138,10 @@ public class AdminUserController {
     public ResponseEntity<AdminUserResponse> getUserById(
             @Parameter(description = "X-User-Role header forwarded by the API gateway")
             @RequestHeader(value = "X-User-Role", required = false) String userRole,
-            @PathVariable UUID id) {
+            @PathVariable UUID id,
+            Authentication authentication) {
 
-        assertAdmin(userRole);
+        assertAdmin(resolveUserRole(userRole, authentication));
         return ResponseEntity.ok(toAdminResponse(userService.findById(id)));
     }
 
@@ -128,9 +160,10 @@ public class AdminUserController {
             @Parameter(description = "X-User-Role header forwarded by the API gateway")
             @RequestHeader(value = "X-User-Role", required = false) String userRole,
             @PathVariable UUID id,
-            @org.springframework.web.bind.annotation.RequestBody Map<String, String> body) {
+            @org.springframework.web.bind.annotation.RequestBody Map<String, String> body,
+            Authentication authentication) {
 
-        assertAdmin(userRole);
+        assertAdmin(resolveUserRole(userRole, authentication));
 
         String status = body.get("status");
         if (status == null || (!status.equals("active") && !status.equals("inactive"))) {
