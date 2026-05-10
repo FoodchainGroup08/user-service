@@ -4,6 +4,10 @@ import com.microservices.user.dto.*;
 import com.microservices.user.service.AuthService;
 import com.microservices.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -34,14 +38,28 @@ public class AuthController {
         @ApiResponse(responseCode = "400", description = "Validation error or email already taken")
     })
     @PostMapping("/register")
-    public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<UserResponse> register(@Valid @org.springframework.web.bind.annotation.RequestBody RegisterRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(request));
     }
 
     @Operation(
         summary = "Login with email and password",
-        description = "Handled entirely by JwtAuthenticationFilter — this stub exists for Swagger documentation only. " +
-                      "POST a JSON body with `email` and `password` fields."
+        description = "Intercepted by JwtAuthenticationFilter before reaching this method. Send JSON with `email` and `password`."
+    )
+    @RequestBody(
+        required = true,
+        content = @Content(
+            mediaType = "application/json",
+            schema = @Schema(implementation = LoginRequest.class),
+            examples = @ExampleObject(
+                name = "Customer login",
+                value = """
+                        {
+                          "email": "john@example.com",
+                          "password": "Secure@123!"
+                        }"""
+            )
+        )
     )
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Returns access token, refresh token and user profile"),
@@ -58,14 +76,14 @@ public class AuthController {
         @ApiResponse(responseCode = "400", description = "Invalid or expired Google credential")
     })
     @PostMapping("/google")
-    public ResponseEntity<AuthResponse> googleAuth(@Valid @RequestBody GoogleAuthRequest request) {
+    public ResponseEntity<AuthResponse> googleAuth(@Valid @org.springframework.web.bind.annotation.RequestBody GoogleAuthRequest request) {
         return ResponseEntity.ok(authService.googleAuth(request.getCredential()));
     }
 
     @Operation(summary = "Send a password-reset link to the given email address")
     @ApiResponse(responseCode = "200", description = "Reset link sent (or silently ignored if email is not registered)")
     @PostMapping("/forgot-password")
-    public ResponseEntity<MessageResponse> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+    public ResponseEntity<MessageResponse> forgotPassword(@Valid @org.springframework.web.bind.annotation.RequestBody ForgotPasswordRequest request) {
         authService.forgotPassword(request.getEmail());
         return ResponseEntity.ok(new MessageResponse("If that email is registered, a reset link has been sent."));
     }
@@ -76,7 +94,7 @@ public class AuthController {
         @ApiResponse(responseCode = "400", description = "Invalid or expired reset token")
     })
     @PostMapping("/reset-password")
-    public ResponseEntity<MessageResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+    public ResponseEntity<MessageResponse> resetPassword(@Valid @org.springframework.web.bind.annotation.RequestBody ResetPasswordRequest request) {
         authService.resetPassword(request.getToken(), request.getNewPassword());
         return ResponseEntity.ok(new MessageResponse("Password updated successfully."));
     }
@@ -87,7 +105,7 @@ public class AuthController {
         @ApiResponse(responseCode = "400", description = "Invalid or expired refresh token")
     })
     @PostMapping("/refresh")
-    public ResponseEntity<AuthResponse> refresh(@Valid @RequestBody RefreshTokenRequest request) {
+    public ResponseEntity<AuthResponse> refresh(@Valid @org.springframework.web.bind.annotation.RequestBody RefreshTokenRequest request) {
         return ResponseEntity.ok(authService.refresh(request));
     }
 
@@ -96,7 +114,7 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(
             @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String accessToken,
-            @RequestBody(required = false) RefreshTokenRequest request) {
+            @org.springframework.web.bind.annotation.RequestBody(required = false) RefreshTokenRequest request) {
         authService.logout(accessToken, request != null ? request.getRefreshToken() : null);
         return ResponseEntity.noContent().build();
     }

@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -57,6 +58,10 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PATCH, "/users/*").hasAnyRole("HEAD_OFFICE_ADMIN", "BRANCH_MANAGER")
                 // All other requests require authentication
                 .anyRequest().authenticated()
+            )
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint((req, res, e) ->
+                    res.sendError(HttpServletResponse.SC_UNAUTHORIZED))
             )
             .addFilterAt(jwtAuthenticationFilter, BasicAuthenticationFilter.class)
             .addFilterAfter(jwtAuthorizationFilter, BasicAuthenticationFilter.class);

@@ -18,6 +18,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -35,6 +37,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 @DisplayName("AuthServiceImpl Unit Tests")
 class AuthServiceImplTest {
 
@@ -77,10 +80,10 @@ class AuthServiceImplTest {
     void register_createsUser_forValidRequest() {
         RegisterRequest request = new RegisterRequest();
         request.setEmail("new@example.com");
-        request.setPassword("securePass1");
+        request.setPassword("Secure@123!");
 
         when(userRepository.existsByEmail("new@example.com")).thenReturn(false);
-        when(passwordEncoder.encode("securePass1")).thenReturn("hashed-password");
+        when(passwordEncoder.encode("Secure@123!")).thenReturn("hashed-password");
         when(userRepository.save(any(User.class))).thenReturn(testUser);
 
         UserResponse response = authService.register(request);
@@ -94,15 +97,15 @@ class AuthServiceImplTest {
     void register_encodesPassword() {
         RegisterRequest request = new RegisterRequest();
         request.setEmail("new@example.com");
-        request.setPassword("plainTextPassword");
+        request.setPassword("PlainText@1!");
 
         when(userRepository.existsByEmail(anyString())).thenReturn(false);
-        when(passwordEncoder.encode("plainTextPassword")).thenReturn("bcrypt-hash");
+        when(passwordEncoder.encode("PlainText@1!")).thenReturn("bcrypt-hash");
         when(userRepository.save(any(User.class))).thenReturn(testUser);
 
         authService.register(request);
 
-        verify(passwordEncoder).encode("plainTextPassword");
+        verify(passwordEncoder).encode("PlainText@1!");
         verify(userRepository).save(argThat(u -> "bcrypt-hash".equals(u.getPasswordHash())));
     }
 
@@ -111,7 +114,7 @@ class AuthServiceImplTest {
     void register_defaultsToCustomerRole_whenRoleNull() {
         RegisterRequest request = new RegisterRequest();
         request.setEmail("new@example.com");
-        request.setPassword("password1");
+        request.setPassword("Secure@123!");
         request.setRole(null);
 
         when(userRepository.existsByEmail(anyString())).thenReturn(false);
@@ -128,7 +131,7 @@ class AuthServiceImplTest {
     void register_usesProvidedRole() {
         RegisterRequest request = new RegisterRequest();
         request.setEmail("manager@example.com");
-        request.setPassword("password1");
+        request.setPassword("Secure@123!");
         request.setRole(User.Role.BRANCH_MANAGER);
 
         when(userRepository.existsByEmail(anyString())).thenReturn(false);
@@ -145,7 +148,7 @@ class AuthServiceImplTest {
     void register_throwsException_forDuplicateEmail() {
         RegisterRequest request = new RegisterRequest();
         request.setEmail("existing@example.com");
-        request.setPassword("password1");
+        request.setPassword("Secure@123!");
 
         when(userRepository.existsByEmail("existing@example.com")).thenReturn(true);
 

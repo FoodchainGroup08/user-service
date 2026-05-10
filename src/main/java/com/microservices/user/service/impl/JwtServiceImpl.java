@@ -90,11 +90,15 @@ public class JwtServiceImpl implements JwtService {
     }
 
     private Claims parseClaims(String token) {
-        return Jwts.parser()
-                .verifyWith(getKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+        try {
+            return Jwts.parser()
+                    .verifyWith(getKey())
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+        } catch (IllegalArgumentException e) {
+            throw new JwtException("Token must not be null or empty", e);
+        }
     }
 
     private SecretKey getKey() {

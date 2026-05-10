@@ -54,18 +54,18 @@ class AuthControllerTest {
                 .build();
     }
 
-    // ---- POST /api/auth/register ----
+    // ---- POST /auth/register ----
 
     @Test
     @DisplayName("register: returns 201 Created with UserResponse for a valid payload")
     void register_returns201_forValidRequest() throws Exception {
         RegisterRequest request = new RegisterRequest();
         request.setEmail("new@example.com");
-        request.setPassword("securePass1");
+        request.setPassword("Secure@123!");
 
         when(authService.register(any(RegisterRequest.class))).thenReturn(sampleUserResponse);
 
-        mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -78,9 +78,9 @@ class AuthControllerTest {
     void register_returns400_forInvalidEmail() throws Exception {
         RegisterRequest request = new RegisterRequest();
         request.setEmail("not-an-email");
-        request.setPassword("securePass1");
+        request.setPassword("Secure@123!");
 
-        mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -91,9 +91,9 @@ class AuthControllerTest {
     void register_returns400_forBlankEmail() throws Exception {
         RegisterRequest request = new RegisterRequest();
         request.setEmail("");
-        request.setPassword("securePass1");
+        request.setPassword("Secure@123!");
 
-        mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -106,7 +106,59 @@ class AuthControllerTest {
         request.setEmail("user@example.com");
         request.setPassword("short");
 
-        mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("register: returns 400 Bad Request when password has no uppercase letter")
+    void register_returns400_forPasswordMissingUppercase() throws Exception {
+        RegisterRequest request = new RegisterRequest();
+        request.setEmail("user@example.com");
+        request.setPassword("secure@123!");
+
+        mockMvc.perform(post("/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("register: returns 400 Bad Request when password has no lowercase letter")
+    void register_returns400_forPasswordMissingLowercase() throws Exception {
+        RegisterRequest request = new RegisterRequest();
+        request.setEmail("user@example.com");
+        request.setPassword("SECURE@123!");
+
+        mockMvc.perform(post("/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("register: returns 400 Bad Request when password has no digit")
+    void register_returns400_forPasswordMissingDigit() throws Exception {
+        RegisterRequest request = new RegisterRequest();
+        request.setEmail("user@example.com");
+        request.setPassword("Secure@Pass!");
+
+        mockMvc.perform(post("/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("register: returns 400 Bad Request when password has no special character")
+    void register_returns400_forPasswordMissingSpecialChar() throws Exception {
+        RegisterRequest request = new RegisterRequest();
+        request.setEmail("user@example.com");
+        request.setPassword("SecurePass1");
+
+        mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -117,17 +169,17 @@ class AuthControllerTest {
     void register_returns400_forDuplicateEmail() throws Exception {
         RegisterRequest request = new RegisterRequest();
         request.setEmail("taken@example.com");
-        request.setPassword("securePass1");
+        request.setPassword("Secure@123!");
 
         when(authService.register(any())).thenThrow(new IllegalArgumentException("Email already registered"));
 
-        mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
     }
 
-    // ---- POST /api/auth/refresh ----
+    // ---- POST /auth/refresh ----
 
     @Test
     @DisplayName("refresh: returns 200 OK with new tokens for a valid refresh token")
@@ -144,7 +196,7 @@ class AuthControllerTest {
                 .build();
         when(authService.refresh(any(RefreshTokenRequest.class))).thenReturn(authResponse);
 
-        mockMvc.perform(post("/api/auth/refresh")
+        mockMvc.perform(post("/auth/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -158,20 +210,20 @@ class AuthControllerTest {
         RefreshTokenRequest request = new RefreshTokenRequest();
         request.setRefreshToken("");
 
-        mockMvc.perform(post("/api/auth/refresh")
+        mockMvc.perform(post("/auth/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
     }
 
-    // ---- POST /api/auth/logout ----
+    // ---- POST /auth/logout ----
 
     @Test
     @DisplayName("logout: returns 204 No Content")
     void logout_returns204() throws Exception {
         doNothing().when(authService).logout(any(), any());
 
-        mockMvc.perform(post("/api/auth/logout")
+        mockMvc.perform(post("/auth/logout")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent());
     }
@@ -184,7 +236,7 @@ class AuthControllerTest {
         RefreshTokenRequest body = new RefreshTokenRequest();
         body.setRefreshToken("some-refresh-token");
 
-        mockMvc.perform(post("/api/auth/logout")
+        mockMvc.perform(post("/auth/logout")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isNoContent());

@@ -73,12 +73,12 @@ class UserControllerTest {
                 .build();
     }
 
-    // ---- GET /api/users/me ----
+    // ---- GET /users/me ----
 
     @Test
     @DisplayName("GET /me: returns 401 when no Authorization header is present")
     void getMe_returns401_whenNotAuthenticated() throws Exception {
-        mockMvc.perform(get("/api/users/me"))
+        mockMvc.perform(get("/users/me"))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -87,7 +87,7 @@ class UserControllerTest {
     void getMe_returns200_withUserProfile_forValidJwt() throws Exception {
         when(userService.findById(customerId)).thenReturn(customerResponse);
 
-        mockMvc.perform(get("/api/users/me")
+        mockMvc.perform(get("/users/me")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + buildToken(customerId, "CUSTOMER")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value("customer@example.com"))
@@ -99,7 +99,7 @@ class UserControllerTest {
     void getMe_returns401_forTamperedToken() throws Exception {
         String tamperedToken = buildTokenWithWrongKey(customerId, "CUSTOMER");
 
-        mockMvc.perform(get("/api/users/me")
+        mockMvc.perform(get("/users/me")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + tamperedToken))
                 .andExpect(status().isUnauthorized());
     }
@@ -109,14 +109,14 @@ class UserControllerTest {
     @Test
     @DisplayName("GET /users: returns 401 when unauthenticated")
     void getAllUsers_returns401_whenNotAuthenticated() throws Exception {
-        mockMvc.perform(get("/api/users"))
+        mockMvc.perform(get("/users"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     @DisplayName("GET /users: returns 403 Forbidden for a CUSTOMER role")
     void getAllUsers_returns403_forCustomer() throws Exception {
-        mockMvc.perform(get("/api/users")
+        mockMvc.perform(get("/users")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + buildToken(customerId, "CUSTOMER")))
                 .andExpect(status().isForbidden());
     }
@@ -126,7 +126,7 @@ class UserControllerTest {
     void getAllUsers_returns200_forAdmin() throws Exception {
         when(userService.findAll()).thenReturn(List.of(customerResponse, adminResponse));
 
-        mockMvc.perform(get("/api/users")
+        mockMvc.perform(get("/users")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + buildToken(adminId, "HEAD_OFFICE_ADMIN")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2));
@@ -136,12 +136,12 @@ class UserControllerTest {
     @DisplayName("GET /users: returns 403 Forbidden for KITCHEN_STAFF role")
     void getAllUsers_returns403_forKitchenStaff() throws Exception {
         UUID staffId = UUID.randomUUID();
-        mockMvc.perform(get("/api/users")
+        mockMvc.perform(get("/users")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + buildToken(staffId, "KITCHEN_STAFF")))
                 .andExpect(status().isForbidden());
     }
 
-    // ---- GET /api/users/{id} ----
+    // ---- GET /users/{id} ----
 
     @Test
     @DisplayName("GET /users/{id}: returns 200 OK for HEAD_OFFICE_ADMIN")
@@ -149,7 +149,7 @@ class UserControllerTest {
         UUID targetId = UUID.randomUUID();
         when(userService.findById(targetId)).thenReturn(customerResponse);
 
-        mockMvc.perform(get("/api/users/" + targetId)
+        mockMvc.perform(get("/users/" + targetId)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + buildToken(adminId, "HEAD_OFFICE_ADMIN")))
                 .andExpect(status().isOk());
     }
@@ -161,7 +161,7 @@ class UserControllerTest {
         UUID targetId = UUID.randomUUID();
         when(userService.findById(targetId)).thenReturn(customerResponse);
 
-        mockMvc.perform(get("/api/users/" + targetId)
+        mockMvc.perform(get("/users/" + targetId)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + buildToken(managerId, "BRANCH_MANAGER")))
                 .andExpect(status().isOk());
     }
@@ -171,7 +171,7 @@ class UserControllerTest {
     void getUserById_returns403_forCustomer() throws Exception {
         UUID targetId = UUID.randomUUID();
 
-        mockMvc.perform(get("/api/users/" + targetId)
+        mockMvc.perform(get("/users/" + targetId)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + buildToken(customerId, "CUSTOMER")))
                 .andExpect(status().isForbidden());
     }
