@@ -21,6 +21,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -49,15 +50,10 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // CORS preflight from browsers / Swagger UI — without this, OPTIONS returns 403 before POST runs.
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers(HttpMethod.POST, "/v1/auth/login").permitAll()
-                .requestMatchers(HttpMethod.POST, "/v1/auth/register").permitAll()
-                .requestMatchers(HttpMethod.POST, "/v1/auth/refresh").permitAll()
-                .requestMatchers(HttpMethod.POST, "/v1/auth/logout").permitAll()
-                .requestMatchers(HttpMethod.POST, "/v1/auth/google").permitAll()
-                .requestMatchers(HttpMethod.POST, "/v1/auth/forgot-password").permitAll()
-                .requestMatchers(HttpMethod.POST, "/v1/auth/reset-password").permitAll()
-                .requestMatchers(HttpMethod.GET, "/v1/auth/verify-email").permitAll()
-                .requestMatchers(HttpMethod.POST, "/v1/auth/resend-verification").permitAll()
+                // Use servlet-path matchers explicitly. String patterns delegate to MvcRequestMatcher and can fail to
+                // match permitAll in some setups; AntPathRequestMatcher matches servletPath (/v1/auth/...) reliably.
+                .requestMatchers(new AntPathRequestMatcher("/v1/auth/**", "POST")).permitAll()
+                .requestMatchers(new AntPathRequestMatcher("/v1/auth/verify-email", "GET")).permitAll()
                 .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                 .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                 .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
