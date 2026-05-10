@@ -1,0 +1,136 @@
+-------------------------------------------------------------------------------
+Test set: com.microservices.user.controller.AdminUserControllerTest
+-------------------------------------------------------------------------------
+Tests run: 12, Failures: 12, Errors: 0, Skipped: 0, Time elapsed: 0.066 s <<< FAILURE! -- in com.microservices.user.controller.AdminUserControllerTest
+com.microservices.user.controller.AdminUserControllerTest.getAllUsers_returns200_forHeadOfficeAdminRoleName -- Time elapsed: 0.004 s <<< FAILURE!
+java.lang.AssertionError: Status expected:<200> but was:<401>
+	at org.springframework.test.util.AssertionErrors.fail(AssertionErrors.java:59)
+	at org.springframework.test.util.AssertionErrors.assertEquals(AssertionErrors.java:122)
+	at org.springframework.test.web.servlet.result.StatusResultMatchers.lambda$matcher$9(StatusResultMatchers.java:637)
+	at org.springframework.test.web.servlet.MockMvc$1.andExpect(MockMvc.java:214)
+	at com.microservices.user.controller.AdminUserControllerTest.getAllUsers_returns200_forHeadOfficeAdminRoleName(AdminUserControllerTest.java:93)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+
+com.microservices.user.controller.AdminUserControllerTest.getAllUsers_returns403_whenRoleHeaderMissing -- Time elapsed: 0.004 s <<< FAILURE!
+java.lang.AssertionError: Status expected:<403> but was:<401>
+	at org.springframework.test.util.AssertionErrors.fail(AssertionErrors.java:59)
+	at org.springframework.test.util.AssertionErrors.assertEquals(AssertionErrors.java:122)
+	at org.springframework.test.web.servlet.result.StatusResultMatchers.lambda$matcher$9(StatusResultMatchers.java:637)
+	at org.springframework.test.web.servlet.MockMvc$1.andExpect(MockMvc.java:214)
+	at com.microservices.user.controller.AdminUserControllerTest.getAllUsers_returns403_whenRoleHeaderMissing(AdminUserControllerTest.java:121)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+
+com.microservices.user.controller.AdminUserControllerTest.updateStatus_returns200_withInactiveUser -- Time elapsed: 0.007 s <<< FAILURE!
+java.lang.AssertionError: Status expected:<200> but was:<401>
+	at org.springframework.test.util.AssertionErrors.fail(AssertionErrors.java:59)
+	at org.springframework.test.util.AssertionErrors.assertEquals(AssertionErrors.java:122)
+	at org.springframework.test.web.servlet.result.StatusResultMatchers.lambda$matcher$9(StatusResultMatchers.java:637)
+	at org.springframework.test.web.servlet.MockMvc$1.andExpect(MockMvc.java:214)
+	at com.microservices.user.controller.AdminUserControllerTest.updateStatus_returns200_withInactiveUser(AdminUserControllerTest.java:179)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+
+com.microservices.user.controller.AdminUserControllerTest.updateStatus_returns200_withActiveUser -- Time elapsed: 0.005 s <<< FAILURE!
+java.lang.AssertionError: Status expected:<200> but was:<401>
+	at org.springframework.test.util.AssertionErrors.fail(AssertionErrors.java:59)
+	at org.springframework.test.util.AssertionErrors.assertEquals(AssertionErrors.java:122)
+	at org.springframework.test.web.servlet.result.StatusResultMatchers.lambda$matcher$9(StatusResultMatchers.java:637)
+	at org.springframework.test.web.servlet.MockMvc$1.andExpect(MockMvc.java:214)
+	at com.microservices.user.controller.AdminUserControllerTest.updateStatus_returns200_withActiveUser(AdminUserControllerTest.java:193)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+
+com.microservices.user.controller.AdminUserControllerTest.updateStatus_returns400_forInvalidStatusValue -- Time elapsed: 0.003 s <<< FAILURE!
+java.lang.AssertionError: Status expected:<400> but was:<401>
+	at org.springframework.test.util.AssertionErrors.fail(AssertionErrors.java:59)
+	at org.springframework.test.util.AssertionErrors.assertEquals(AssertionErrors.java:122)
+	at org.springframework.test.web.servlet.result.StatusResultMatchers.lambda$matcher$9(StatusResultMatchers.java:637)
+	at org.springframework.test.web.servlet.MockMvc$1.andExpect(MockMvc.java:214)
+	at com.microservices.user.controller.AdminUserControllerTest.updateStatus_returns400_forInvalidStatusValue(AdminUserControllerTest.java:214)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+
+com.microservices.user.controller.AdminUserControllerTest.getUserById_returns404_forUnknownId -- Time elapsed: 0.004 s <<< FAILURE!
+java.lang.AssertionError: Status expected:<404> but was:<401>
+	at org.springframework.test.util.AssertionErrors.fail(AssertionErrors.java:59)
+	at org.springframework.test.util.AssertionErrors.assertEquals(AssertionErrors.java:122)
+	at org.springframework.test.web.servlet.result.StatusResultMatchers.lambda$matcher$9(StatusResultMatchers.java:637)
+	at org.springframework.test.web.servlet.MockMvc$1.andExpect(MockMvc.java:214)
+	at com.microservices.user.controller.AdminUserControllerTest.getUserById_returns404_forUnknownId(AdminUserControllerTest.java:148)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+
+com.microservices.user.controller.AdminUserControllerTest.getAllUsers_returns403_forNonAdmin -- Time elapsed: 0.004 s <<< FAILURE!
+java.lang.AssertionError: Status expected:<403> but was:<401>
+	at org.springframework.test.util.AssertionErrors.fail(AssertionErrors.java:59)
+	at org.springframework.test.util.AssertionErrors.assertEquals(AssertionErrors.java:122)
+	at org.springframework.test.web.servlet.result.StatusResultMatchers.lambda$matcher$9(StatusResultMatchers.java:637)
+	at org.springframework.test.web.servlet.MockMvc$1.andExpect(MockMvc.java:214)
+	at com.microservices.user.controller.AdminUserControllerTest.getAllUsers_returns403_forNonAdmin(AdminUserControllerTest.java:114)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+
+com.microservices.user.controller.AdminUserControllerTest.getUserById_returns200_forValidId -- Time elapsed: 0.004 s <<< FAILURE!
+java.lang.AssertionError: Status expected:<200> but was:<401>
+	at org.springframework.test.util.AssertionErrors.fail(AssertionErrors.java:59)
+	at org.springframework.test.util.AssertionErrors.assertEquals(AssertionErrors.java:122)
+	at org.springframework.test.web.servlet.result.StatusResultMatchers.lambda$matcher$9(StatusResultMatchers.java:637)
+	at org.springframework.test.web.servlet.MockMvc$1.andExpect(MockMvc.java:214)
+	at com.microservices.user.controller.AdminUserControllerTest.getUserById_returns200_forValidId(AdminUserControllerTest.java:133)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+
+com.microservices.user.controller.AdminUserControllerTest.getUserById_returns403_forNonAdmin -- Time elapsed: 0.004 s <<< FAILURE!
+java.lang.AssertionError: Status expected:<403> but was:<401>
+	at org.springframework.test.util.AssertionErrors.fail(AssertionErrors.java:59)
+	at org.springframework.test.util.AssertionErrors.assertEquals(AssertionErrors.java:122)
+	at org.springframework.test.web.servlet.result.StatusResultMatchers.lambda$matcher$9(StatusResultMatchers.java:637)
+	at org.springframework.test.web.servlet.MockMvc$1.andExpect(MockMvc.java:214)
+	at com.microservices.user.controller.AdminUserControllerTest.getUserById_returns403_forNonAdmin(AdminUserControllerTest.java:156)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+
+com.microservices.user.controller.AdminUserControllerTest.getAllUsers_returns200_withRoleFilter -- Time elapsed: 0.004 s <<< FAILURE!
+java.lang.AssertionError: Status expected:<200> but was:<401>
+	at org.springframework.test.util.AssertionErrors.fail(AssertionErrors.java:59)
+	at org.springframework.test.util.AssertionErrors.assertEquals(AssertionErrors.java:122)
+	at org.springframework.test.web.servlet.result.StatusResultMatchers.lambda$matcher$9(StatusResultMatchers.java:637)
+	at org.springframework.test.web.servlet.MockMvc$1.andExpect(MockMvc.java:214)
+	at com.microservices.user.controller.AdminUserControllerTest.getAllUsers_returns200_withRoleFilter(AdminUserControllerTest.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+
+com.microservices.user.controller.AdminUserControllerTest.updateStatus_returns403_forNonAdmin -- Time elapsed: 0.005 s <<< FAILURE!
+java.lang.AssertionError: Status expected:<403> but was:<401>
+	at org.springframework.test.util.AssertionErrors.fail(AssertionErrors.java:59)
+	at org.springframework.test.util.AssertionErrors.assertEquals(AssertionErrors.java:122)
+	at org.springframework.test.web.servlet.result.StatusResultMatchers.lambda$matcher$9(StatusResultMatchers.java:637)
+	at org.springframework.test.web.servlet.MockMvc$1.andExpect(MockMvc.java:214)
+	at com.microservices.user.controller.AdminUserControllerTest.updateStatus_returns403_forNonAdmin(AdminUserControllerTest.java:204)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+
+com.microservices.user.controller.AdminUserControllerTest.getAllUsers_returns200_withList -- Time elapsed: 0.004 s <<< FAILURE!
+java.lang.AssertionError: Status expected:<200> but was:<401>
+	at org.springframework.test.util.AssertionErrors.fail(AssertionErrors.java:59)
+	at org.springframework.test.util.AssertionErrors.assertEquals(AssertionErrors.java:122)
+	at org.springframework.test.web.servlet.result.StatusResultMatchers.lambda$matcher$9(StatusResultMatchers.java:637)
+	at org.springframework.test.web.servlet.MockMvc$1.andExpect(MockMvc.java:214)
+	at com.microservices.user.controller.AdminUserControllerTest.getAllUsers_returns200_withList(AdminUserControllerTest.java:79)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+

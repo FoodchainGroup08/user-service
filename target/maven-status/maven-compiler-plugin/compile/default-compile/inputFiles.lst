@@ -1,6 +1,7 @@
 /Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/filter/JwtAuthenticationFilter.java
 /Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/UserServiceApplication.java
 /Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/controller/UserController.java
+/Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/service/impl/KafkaEmailNotificationService.java
 /Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/dto/UserResponse.java
 /Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/service/JwtService.java
 /Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/dto/UpdateUserRequest.java
@@ -16,9 +17,13 @@
 /Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/service/AuthService.java
 /Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/service/impl/UserServiceImpl.java
 /Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/dto/RegisterRequest.java
+/Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/email/EmailSendEvent.java
+/Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/service/impl/NoOpEmailService.java
 /Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/service/TokenBlacklistService.java
 /Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/exception/ResourceNotFoundException.java
+/Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/email/EmailTemplates.java
 /Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/entity/User.java
+/Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/service/EmailService.java
 /Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/config/SecurityConfig.java
 /Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/config/ModelMapperConfig.java
 /Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/filter/JwtAuthorizationFilter.java

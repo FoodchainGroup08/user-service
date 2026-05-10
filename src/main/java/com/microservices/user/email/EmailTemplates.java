@@ -41,7 +41,7 @@ public class EmailTemplates {
                   %s
                   <div class="footer">
                     <p class="footer-text">
-                      &copy; 2024 FoodChain &nbsp;&bull;&nbsp;
+                      &copy; 2026 FoodChain &nbsp;&bull;&nbsp;
                       You received this email because of activity on your account.<br>
                       If you didn't request this, please ignore this email or <a class="footer-link" href="#">contact support</a>.
                     </p>
@@ -53,7 +53,10 @@ public class EmailTemplates {
             """.formatted(BASE_STYLE, headerExtra, bodyContent);
     }
 
-    public static String welcome(String name) {
+    public static String welcome(String name, String frontendBaseUrl) {
+        String base = frontendBaseUrl != null && !frontendBaseUrl.isBlank()
+                ? frontendBaseUrl.replaceAll("/$", "")
+                : "http://localhost:5173";
         String body = """
             <div class="header">
               <div class="logo">🍔</div>
@@ -74,14 +77,14 @@ public class EmailTemplates {
                 <li>📦 Track your order in real time</li>
               </ul>
               <div class="btn-wrap">
-                <a class="btn" href="http://localhost:5173">Start Ordering</a>
+                <a class="btn" href="%s">Start Ordering</a>
               </div>
               <hr class="divider">
               <p class="note">
                 If you have any questions, simply reply to this email — we're always happy to help.
               </p>
             </div>
-            """.formatted(name != null ? name : "there");
+            """.formatted(name != null ? name : "there", base);
         return wrap("", body);
     }
 

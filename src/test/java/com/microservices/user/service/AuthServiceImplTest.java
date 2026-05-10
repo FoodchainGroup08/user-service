@@ -23,6 +23,7 @@ import org.mockito.quality.Strictness;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import javax.crypto.SecretKey;
@@ -49,6 +50,8 @@ class AuthServiceImplTest {
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private StringRedisTemplate redisTemplate;
     @Mock private ValueOperations<String, String> valueOperations;
+    @Mock private RestTemplate restTemplate;
+    @Mock private EmailService emailService;
 
     @InjectMocks
     private AuthServiceImpl authService;
@@ -61,6 +64,7 @@ class AuthServiceImplTest {
         ReflectionTestUtils.setField(authService, "jwtSecret", TEST_SECRET);
         ReflectionTestUtils.setField(authService, "accessTokenExpiryMs", 900000L);
         ReflectionTestUtils.setField(authService, "refreshTokenExpiryMs", 604800000L);
+        ReflectionTestUtils.setField(authService, "frontendUrl", "http://localhost:5173");
 
         testUserId = UUID.randomUUID();
         testUser = User.builder()
@@ -90,6 +94,7 @@ class AuthServiceImplTest {
 
         assertNotNull(response);
         verify(userRepository).save(any(User.class));
+        verify(emailService).sendWelcome(anyString(), any());
     }
 
     @Test
@@ -107,6 +112,7 @@ class AuthServiceImplTest {
 
         verify(passwordEncoder).encode("PlainText@1!");
         verify(userRepository).save(argThat(u -> "bcrypt-hash".equals(u.getPasswordHash())));
+        verify(emailService).sendWelcome(anyString(), any());
     }
 
     @Test
@@ -124,6 +130,7 @@ class AuthServiceImplTest {
         authService.register(request);
 
         verify(userRepository).save(argThat(u -> u.getRole() == User.Role.CUSTOMER));
+        verify(emailService).sendWelcome(anyString(), any());
     }
 
     @Test
@@ -141,6 +148,7 @@ class AuthServiceImplTest {
         authService.register(request);
 
         verify(userRepository).save(argThat(u -> u.getRole() == User.Role.BRANCH_MANAGER));
+        verify(emailService).sendWelcome(anyString(), any());
     }
 
     @Test
@@ -154,6 +162,7 @@ class AuthServiceImplTest {
 
         assertThrows(IllegalArgumentException.class, () -> authService.register(request));
         verify(userRepository, never()).save(any());
+        verify(emailService, never()).sendWelcome(anyString(), any());
     }
 
     // ---- buildAuthResponse ----
@@ -200,6 +209,37 @@ class AuthServiceImplTest {
                 eq(testUserId.toString()),
                 eq(Duration.ofMillis(604800000L))
         );
+    }
+
+    // ---- forgot password ----
+
+    @Test
+    @DisplayName("forgotPassword: stores token and queues reset email when user exists")
+    void forgotPassword_sendsEmail_whenUserExists() {
+        when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(testUser));
+
+        authService.forgotPassword("user@example.com");
+
+        verify(valueOperations).set(
+                startsWith("auth:reset:"),
+                eq(testUserId.toString()),
+                eq(Duration.ofHours(1))
+        );
+        verify(emailService).sendPasswordReset(
+                eq("user@example.com"),
+                any(),
+                argThat(link -> link.startsWith("http://localhost:5173/reset-password?token=")));
+    }
+
+    @Test
+    @DisplayName("forgotPassword: does nothing when email is unknown")
+    void forgotPassword_noEmail_whenUnknown() {
+        when(userRepository.findByEmail("noone@example.com")).thenReturn(Optional.empty());
+
+        authService.forgotPassword("noone@example.com");
+
+        verify(valueOperations, never()).set(anyString(), anyString(), any(Duration.class));
+        verify(emailService, never()).sendPasswordReset(anyString(), any(), anyString());
     }
 
     // ---- refresh ----

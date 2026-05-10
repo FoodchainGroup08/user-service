@@ -1,4 +1,16 @@
 -------------------------------------------------------------------------------
 Test set: com.microservices.user.controller.UserControllerTest
 -------------------------------------------------------------------------------
-Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.977 s -- in com.microservices.user.controller.UserControllerTest
+Tests run: 10, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 1.155 s <<< FAILURE! -- in com.microservices.user.controller.UserControllerTest
+com.microservices.user.controller.UserControllerTest.getMe_returns200_withUserProfile_forValidJwt -- Time elapsed: 0.137 s <<< FAILURE!
+java.lang.AssertionError: JSON path "$.role" expected:<CUSTOMER> but was:<Customer>
+	at org.springframework.test.util.AssertionErrors.fail(AssertionErrors.java:59)
+	at org.springframework.test.util.AssertionErrors.assertEquals(AssertionErrors.java:122)
+	at org.springframework.test.util.JsonPathExpectationsHelper.assertValue(JsonPathExpectationsHelper.java:123)
+	at org.springframework.test.web.servlet.result.JsonPathResultMatchers.lambda$value$2(JsonPathResultMatchers.java:111)
+	at org.springframework.test.web.servlet.MockMvc$1.andExpect(MockMvc.java:214)
+	at com.microservices.user.controller.UserControllerTest.getMe_returns200_withUserProfile_forValidJwt(UserControllerTest.java:94)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+

@@ -8,6 +8,7 @@ import com.microservices.user.entity.User;
 import com.microservices.user.exception.ResourceNotFoundException;
 import com.microservices.user.repository.UserRepository;
 import com.microservices.user.service.AuthService;
+import com.microservices.user.service.EmailService;
 import com.microservices.user.service.JwtService;
 import com.microservices.user.service.TokenBlacklistService;
 import io.jsonwebtoken.Claims;
@@ -40,6 +41,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final StringRedisTemplate redisTemplate;
     private final RestTemplate restTemplate;
+    private final EmailService emailService;
 
     @Value("${jwt.secret}")
     private String jwtSecret;
@@ -72,7 +74,14 @@ public class AuthServiceImpl implements AuthService {
                 .branchId(request.getBranchId())
                 .build();
 
-        return UserResponse.from(userRepository.save(user));
+        User saved = userRepository.save(user);
+        try {
+            emailService.sendWelcome(saved.getEmail(), saved.getName());
+        } catch (Exception e) {
+            log.warn("Welcome email could not be queued for {}: {}", saved.getEmail(), e.getMessage());
+        }
+
+        return UserResponse.from(saved);
     }
 
     // ---- Token helpers ----
@@ -168,8 +177,11 @@ public class AuthServiceImpl implements AuthService {
                     Duration.ofHours(1)
             );
             String resetLink = frontendUrl + "/reset-password?token=" + token;
-            // TODO: replace with real email sender (e.g. JavaMailSender / SendGrid)
-            log.info("Password reset link for {}: {}", email, resetLink);
+            try {
+                emailService.sendPasswordReset(email, user.getName(), resetLink);
+            } catch (Exception e) {
+                log.warn("Password reset email could not be queued for {}: {}", email, e.getMessage());
+            }
         });
     }
 
