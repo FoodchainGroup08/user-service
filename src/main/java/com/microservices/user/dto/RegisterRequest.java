@@ -13,6 +13,7 @@ import java.util.UUID;
 @Schema(description = "Payload for creating a new customer account (role is always CUSTOMER)")
 public class RegisterRequest {
 
+    @NotBlank(message = "Name is required")
     @Schema(description = "User's full name", example = "John Doe")
     private String name;
 
