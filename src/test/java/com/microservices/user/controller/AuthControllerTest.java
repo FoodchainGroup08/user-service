@@ -71,7 +71,7 @@ class AuthControllerTest {
 
         when(authService.register(any(RegisterRequest.class))).thenReturn(sampleUserResponse);
 
-        mockMvc.perform(post("/api/v1/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register").contextPath("/api")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -87,7 +87,7 @@ class AuthControllerTest {
         request.setPassword("Secure@123!");
         request.setBranchId(SAMPLE_BRANCH_ID);
 
-        mockMvc.perform(post("/api/v1/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register").contextPath("/api")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -101,7 +101,7 @@ class AuthControllerTest {
         request.setPassword("Secure@123!");
         request.setBranchId(SAMPLE_BRANCH_ID);
 
-        mockMvc.perform(post("/api/v1/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register").contextPath("/api")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -115,7 +115,7 @@ class AuthControllerTest {
         request.setPassword("short");
         request.setBranchId(SAMPLE_BRANCH_ID);
 
-        mockMvc.perform(post("/api/v1/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register").contextPath("/api")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -129,7 +129,7 @@ class AuthControllerTest {
         request.setPassword("secure@123!");
         request.setBranchId(SAMPLE_BRANCH_ID);
 
-        mockMvc.perform(post("/api/v1/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register").contextPath("/api")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -143,7 +143,7 @@ class AuthControllerTest {
         request.setPassword("SECURE@123!");
         request.setBranchId(SAMPLE_BRANCH_ID);
 
-        mockMvc.perform(post("/api/v1/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register").contextPath("/api")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -157,7 +157,7 @@ class AuthControllerTest {
         request.setPassword("Secure@Pass!");
         request.setBranchId(SAMPLE_BRANCH_ID);
 
-        mockMvc.perform(post("/api/v1/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register").contextPath("/api")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -171,7 +171,7 @@ class AuthControllerTest {
         request.setPassword("SecurePass1");
         request.setBranchId(SAMPLE_BRANCH_ID);
 
-        mockMvc.perform(post("/api/v1/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register").contextPath("/api")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -187,7 +187,7 @@ class AuthControllerTest {
 
         when(authService.register(any())).thenThrow(new IllegalArgumentException("Email already registered"));
 
-        mockMvc.perform(post("/api/v1/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register").contextPath("/api")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -210,7 +210,7 @@ class AuthControllerTest {
                 .build();
         when(authService.refresh(any(RefreshTokenRequest.class))).thenReturn(authResponse);
 
-        mockMvc.perform(post("/api/v1/auth/refresh")
+        mockMvc.perform(post("/api/v1/auth/refresh").contextPath("/api")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -224,7 +224,7 @@ class AuthControllerTest {
         RefreshTokenRequest request = new RefreshTokenRequest();
         request.setRefreshToken("");
 
-        mockMvc.perform(post("/api/v1/auth/refresh")
+        mockMvc.perform(post("/api/v1/auth/refresh").contextPath("/api")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -237,7 +237,7 @@ class AuthControllerTest {
     void logout_returns204() throws Exception {
         doNothing().when(authService).logout(any(), any());
 
-        mockMvc.perform(post("/api/v1/auth/logout")
+        mockMvc.perform(post("/api/v1/auth/logout").contextPath("/api")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent());
     }
@@ -250,7 +250,7 @@ class AuthControllerTest {
         RefreshTokenRequest body = new RefreshTokenRequest();
         body.setRefreshToken("some-refresh-token");
 
-        mockMvc.perform(post("/api/v1/auth/logout")
+        mockMvc.perform(post("/api/v1/auth/logout").contextPath("/api")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isNoContent());

@@ -10,6 +10,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -32,6 +33,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<Map<String, Object>> handleIllegalState(IllegalStateException e, HttpServletRequest req) {
         return errorResponse(HttpStatus.FORBIDDEN, "Forbidden", e.getMessage(), req);
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<Map<String, Object>> handleResponseStatus(ResponseStatusException e, HttpServletRequest req) {
+        HttpStatus status = HttpStatus.valueOf(e.getStatusCode().value());
+        String reason = e.getReason() != null ? e.getReason() : status.getReasonPhrase();
+        return errorResponse(status, status.getReasonPhrase(), reason, req);
     }
 
     @ExceptionHandler(BadCredentialsException.class)

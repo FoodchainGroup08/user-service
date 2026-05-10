@@ -7,19 +7,26 @@ import com.microservices.user.exception.ResourceNotFoundException;
 import com.microservices.user.service.AuthService;
 import com.microservices.user.service.BranchValidationService;
 import com.microservices.user.service.UserService;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.client.RestTemplate;
 
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -44,12 +51,19 @@ class AdminUserControllerTest {
     @MockBean private RestTemplate restTemplate;
     @MockBean private BranchValidationService branchValidationService;
 
+    @Value("${jwt.secret}")
+    private String jwtSecret;
+
+    /** Subject user id embedded in JWT — must match any mocked service lookups if needed */
+    private UUID callerId;
+
     private UUID userId;
     private UserResponse customerResponse;
     private UserResponse kitchenStaffResponse;
 
     @BeforeEach
     void setUp() {
+        callerId = UUID.randomUUID();
         userId = UUID.randomUUID();
 
         customerResponse = UserResponse.builder()
@@ -76,7 +90,8 @@ class AdminUserControllerTest {
     void getAllUsers_returns200_withList() throws Exception {
         when(userService.findAllUsers(null)).thenReturn(List.of(customerResponse, kitchenStaffResponse));
 
-        mockMvc.perform(get("/api/v1/admin/users")
+        mockMvc.perform(get("/api/v1/admin/users").contextPath("/api")
+                        .header(HttpHeaders.AUTHORIZATION, bearer("HEAD_OFFICE_ADMIN"))
                         .header("X-User-Role", "Admin"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
@@ -90,7 +105,8 @@ class AdminUserControllerTest {
     void getAllUsers_returns200_forHeadOfficeAdminRoleName() throws Exception {
         when(userService.findAllUsers(null)).thenReturn(List.of(customerResponse));
 
-        mockMvc.perform(get("/api/v1/admin/users")
+        mockMvc.perform(get("/api/v1/admin/users").contextPath("/api")
+                        .header(HttpHeaders.AUTHORIZATION, bearer("HEAD_OFFICE_ADMIN"))
                         .header("X-User-Role", "HEAD_OFFICE_ADMIN"))
                 .andExpect(status().isOk());
     }
@@ -100,7 +116,8 @@ class AdminUserControllerTest {
     void getAllUsers_returns200_withRoleFilter() throws Exception {
         when(userService.findAllUsers(User.Role.CUSTOMER)).thenReturn(List.of(customerResponse));
 
-        mockMvc.perform(get("/api/v1/admin/users")
+        mockMvc.perform(get("/api/v1/admin/users").contextPath("/api")
+                        .header(HttpHeaders.AUTHORIZATION, bearer("HEAD_OFFICE_ADMIN"))
                         .header("X-User-Role", "Admin")
                         .param("role", "Customer"))
                 .andExpect(status().isOk())
@@ -111,7 +128,8 @@ class AdminUserControllerTest {
     @Test
     @DisplayName("GET /admin/users: returns 403 when role is not Admin")
     void getAllUsers_returns403_forNonAdmin() throws Exception {
-        mockMvc.perform(get("/api/v1/admin/users")
+        mockMvc.perform(get("/api/v1/admin/users").contextPath("/api")
+                        .header(HttpHeaders.AUTHORIZATION, bearer("CUSTOMER"))
                         .header("X-User-Role", "CUSTOMER"))
                 .andExpect(status().isForbidden());
     }
@@ -119,7 +137,8 @@ class AdminUserControllerTest {
     @Test
     @DisplayName("GET /admin/users: returns 403 when X-User-Role header is missing")
     void getAllUsers_returns403_whenRoleHeaderMissing() throws Exception {
-        mockMvc.perform(get("/api/v1/admin/users"))
+        mockMvc.perform(get("/api/v1/admin/users").contextPath("/api")
+                        .header(HttpHeaders.AUTHORIZATION, bearer("CUSTOMER")))
                 .andExpect(status().isForbidden());
     }
 
@@ -130,7 +149,8 @@ class AdminUserControllerTest {
     void getUserById_returns200_forValidId() throws Exception {
         when(userService.findById(userId)).thenReturn(customerResponse);
 
-        mockMvc.perform(get("/api/v1/admin/users/{id}", userId)
+        mockMvc.perform(get("/api/v1/admin/users/{id}", userId).contextPath("/api")
+                        .header(HttpHeaders.AUTHORIZATION, bearer("HEAD_OFFICE_ADMIN"))
                         .header("X-User-Role", "Admin"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(userId.toString()))
@@ -145,7 +165,8 @@ class AdminUserControllerTest {
         when(userService.findById(unknownId))
                 .thenThrow(new ResourceNotFoundException("User not found: " + unknownId));
 
-        mockMvc.perform(get("/api/v1/admin/users/{id}", unknownId)
+        mockMvc.perform(get("/api/v1/admin/users/{id}", unknownId).contextPath("/api")
+                        .header(HttpHeaders.AUTHORIZATION, bearer("HEAD_OFFICE_ADMIN"))
                         .header("X-User-Role", "Admin"))
                 .andExpect(status().isNotFound());
     }
@@ -153,7 +174,8 @@ class AdminUserControllerTest {
     @Test
     @DisplayName("GET /admin/users/{id}: returns 403 when role is not Admin")
     void getUserById_returns403_forNonAdmin() throws Exception {
-        mockMvc.perform(get("/api/v1/admin/users/{id}", userId)
+        mockMvc.perform(get("/api/v1/admin/users/{id}", userId).contextPath("/api")
+                        .header(HttpHeaders.AUTHORIZATION, bearer("BRANCH_MANAGER"))
                         .header("X-User-Role", "BRANCH_MANAGER"))
                 .andExpect(status().isForbidden());
     }
@@ -174,7 +196,8 @@ class AdminUserControllerTest {
         doNothing().when(userService).updateUserStatus(eq(userId), eq(false));
         when(userService.findById(userId)).thenReturn(inactiveResponse);
 
-        mockMvc.perform(patch("/api/v1/admin/users/{id}/status", userId)
+        mockMvc.perform(patch("/api/v1/admin/users/{id}/status", userId).contextPath("/api")
+                        .header(HttpHeaders.AUTHORIZATION, bearer("HEAD_OFFICE_ADMIN"))
                         .header("X-User-Role", "Admin")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("status", "inactive"))))
@@ -188,7 +211,8 @@ class AdminUserControllerTest {
         doNothing().when(userService).updateUserStatus(eq(userId), eq(true));
         when(userService.findById(userId)).thenReturn(customerResponse);
 
-        mockMvc.perform(patch("/api/v1/admin/users/{id}/status", userId)
+        mockMvc.perform(patch("/api/v1/admin/users/{id}/status", userId).contextPath("/api")
+                        .header(HttpHeaders.AUTHORIZATION, bearer("HEAD_OFFICE_ADMIN"))
                         .header("X-User-Role", "Admin")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("status", "active"))))
@@ -199,7 +223,8 @@ class AdminUserControllerTest {
     @Test
     @DisplayName("PATCH /admin/users/{id}/status: returns 403 when role is not Admin")
     void updateStatus_returns403_forNonAdmin() throws Exception {
-        mockMvc.perform(patch("/api/v1/admin/users/{id}/status", userId)
+        mockMvc.perform(patch("/api/v1/admin/users/{id}/status", userId).contextPath("/api")
+                        .header(HttpHeaders.AUTHORIZATION, bearer("KITCHEN_STAFF"))
                         .header("X-User-Role", "KITCHEN_STAFF")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("status", "inactive"))))
@@ -209,10 +234,28 @@ class AdminUserControllerTest {
     @Test
     @DisplayName("PATCH /admin/users/{id}/status: returns 400 for invalid status value")
     void updateStatus_returns400_forInvalidStatusValue() throws Exception {
-        mockMvc.perform(patch("/api/v1/admin/users/{id}/status", userId)
+        mockMvc.perform(patch("/api/v1/admin/users/{id}/status", userId).contextPath("/api")
+                        .header(HttpHeaders.AUTHORIZATION, bearer("HEAD_OFFICE_ADMIN"))
                         .header("X-User-Role", "Admin")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("status", "suspended"))))
                 .andExpect(status().isBadRequest());
+    }
+
+    private String bearer(String roleClaim) {
+        return "Bearer " + buildToken(callerId, roleClaim);
+    }
+
+    private String buildToken(UUID userId, String role) {
+        SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+        return Jwts.builder()
+                .subject(userId.toString())
+                .claim("email", userId + "@example.com")
+                .claim("role", role)
+                .id(UUID.randomUUID().toString())
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + 900_000))
+                .signWith(key)
+                .compact();
     }
 }

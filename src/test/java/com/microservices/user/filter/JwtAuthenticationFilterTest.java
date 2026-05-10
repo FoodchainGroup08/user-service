@@ -48,43 +48,44 @@ class JwtAuthenticationFilterTest {
                 .id(UUID.randomUUID())
                 .email("user@example.com")
                 .role(User.Role.CUSTOMER)
+                .emailVerified(true)
                 .build();
     }
 
     // ---- shouldNotFilter ----
 
     @Test
-    @DisplayName("shouldNotFilter: returns false for POST /auth/login (filter must run)")
+    @DisplayName("shouldNotFilter: returns false for POST /v1/auth/login (filter must run)")
     void shouldNotFilter_returnsFalse_forLoginPost() throws Exception {
-        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/auth/login");
-        request.setServletPath("/auth/login");
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/v1/auth/login");
+        request.setServletPath("/v1/auth/login");
 
         assertFalse(filter.shouldNotFilter(request));
     }
 
     @Test
-    @DisplayName("shouldNotFilter: returns true for GET /auth/login (skip filter)")
+    @DisplayName("shouldNotFilter: returns true for GET /v1/auth/login (skip filter)")
     void shouldNotFilter_returnsTrue_forLoginGet() throws Exception {
-        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/auth/login");
-        request.setServletPath("/auth/login");
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/v1/auth/login");
+        request.setServletPath("/v1/auth/login");
 
         assertTrue(filter.shouldNotFilter(request));
     }
 
     @Test
-    @DisplayName("shouldNotFilter: returns true for POST /auth/register (skip filter)")
+    @DisplayName("shouldNotFilter: returns true for POST /v1/auth/register (skip filter)")
     void shouldNotFilter_returnsTrue_forRegisterPost() throws Exception {
-        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/auth/register");
-        request.setServletPath("/auth/register");
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/v1/auth/register");
+        request.setServletPath("/v1/auth/register");
 
         assertTrue(filter.shouldNotFilter(request));
     }
 
     @Test
-    @DisplayName("shouldNotFilter: returns true for GET /users/me (skip filter)")
+    @DisplayName("shouldNotFilter: returns true for GET /v1/users/me (skip filter)")
     void shouldNotFilter_returnsTrue_forOtherPaths() throws Exception {
-        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/users/me");
-        request.setServletPath("/users/me");
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/v1/users/me");
+        request.setServletPath("/v1/users/me");
 
         assertTrue(filter.shouldNotFilter(request));
     }
@@ -111,8 +112,8 @@ class JwtAuthenticationFilterTest {
                 .build();
         when(authService.buildAuthResponse(testUser)).thenReturn(authResponse);
 
-        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/auth/login");
-        request.setServletPath("/auth/login");
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/v1/auth/login");
+        request.setServletPath("/v1/auth/login");
         request.setContentType("application/json");
         request.setContent(objectMapper.writeValueAsBytes(loginRequest));
 
@@ -139,8 +140,8 @@ class JwtAuthenticationFilterTest {
         when(authenticationManager.authenticate(any()))
                 .thenThrow(new BadCredentialsException("Bad credentials"));
 
-        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/auth/login");
-        request.setServletPath("/auth/login");
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/v1/auth/login");
+        request.setServletPath("/v1/auth/login");
         request.setContentType("application/json");
         request.setContent(objectMapper.writeValueAsBytes(loginRequest));
 
@@ -166,8 +167,8 @@ class JwtAuthenticationFilterTest {
                 AuthResponse.builder().accessToken("t").refreshToken("r").user(UserResponse.from(testUser)).build()
         );
 
-        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/auth/login");
-        request.setServletPath("/auth/login");
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/v1/auth/login");
+        request.setServletPath("/v1/auth/login");
         request.setContentType("application/json");
         request.setContent(objectMapper.writeValueAsBytes(loginRequest));
 
@@ -188,8 +189,8 @@ class JwtAuthenticationFilterTest {
         when(authenticationManager.authenticate(any()))
                 .thenThrow(new BadCredentialsException("simulate failure to avoid NPE"));
 
-        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/auth/login");
-        request.setServletPath("/auth/login");
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/v1/auth/login");
+        request.setServletPath("/v1/auth/login");
         request.setContentType("application/json");
         request.setContent(objectMapper.writeValueAsBytes(loginRequest));
 
