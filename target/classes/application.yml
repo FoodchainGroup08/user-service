@@ -55,10 +55,20 @@ jwt:
   refresh-token-expiry-ms: 604800000  # 7 days
 
 app:
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}
   oauth2:
     enabled: ${OAUTH2_ENABLED:false}
     # Redirect URL after OAuth2 login (frontend URL)
     redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:5173/oauth2/callback}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+    display-request-duration: true
+  api-docs:
+    path: /v3/api-docs
 
 management:
   endpoints:

@@ -6,7 +6,10 @@
 /Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/dto/UpdateUserRequest.java
 /Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/service/impl/TokenBlacklistServiceImpl.java
 /Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/service/impl/JwtServiceImpl.java
+/Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/dto/MessageResponse.java
+/Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/dto/ResetPasswordRequest.java
 /Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/repository/UserRepository.java
+/Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/dto/ForgotPasswordRequest.java
 /Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/config/AuthManagerConfig.java
 /Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/config/RedisConfig.java
 /Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/service/AuthService.java
@@ -28,4 +31,6 @@
 /Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/oauth2/CustomOAuth2UserService.java
 /Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/dto/AuthResponse.java
 /Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/service/UserService.java
+/Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/config/OpenApiConfig.java
 /Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/controller/AuthController.java
+/Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/dto/GoogleAuthRequest.java
