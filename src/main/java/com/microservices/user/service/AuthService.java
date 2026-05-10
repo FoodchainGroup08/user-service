@@ -1,6 +1,7 @@
 package com.microservices.user.service;
 
 import com.microservices.user.dto.AuthResponse;
+import com.microservices.user.dto.LoginRequest;
 import com.microservices.user.dto.RefreshTokenRequest;
 import com.microservices.user.dto.RegisterRequest;
 import com.microservices.user.dto.UserResponse;
@@ -10,7 +11,8 @@ public interface AuthService {
 
     UserResponse register(RegisterRequest request);
 
-    /** Called by JwtAuthenticationFilter after successful credential validation. */
+    AuthResponse login(LoginRequest request);
+
     AuthResponse buildAuthResponse(User user);
 
     AuthResponse refresh(RefreshTokenRequest request);

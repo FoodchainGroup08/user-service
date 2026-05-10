@@ -1,9 +1,11 @@
 package com.microservices.user.service.impl;
 
 import com.microservices.user.dto.AuthResponse;
+import com.microservices.user.dto.LoginRequest;
 import com.microservices.user.dto.RefreshTokenRequest;
 import com.microservices.user.dto.RegisterRequest;
 import com.microservices.user.dto.UserResponse;
+import org.springframework.security.authentication.BadCredentialsException;
 import com.microservices.user.entity.User;
 import com.microservices.user.exception.ResourceNotFoundException;
 import com.microservices.user.repository.UserRepository;
@@ -98,6 +100,28 @@ public class AuthServiceImpl implements AuthService {
         }
 
         return UserResponse.from(saved);
+    }
+
+    // ---- Login ----
+
+    @Override
+    public AuthResponse login(LoginRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
+
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            throw new BadCredentialsException("Invalid email or password");
+        }
+
+        if (!user.isEmailVerified()) {
+            throw new IllegalStateException("Please verify your email before signing in");
+        }
+
+        if (!user.isActive()) {
+            throw new IllegalStateException("Your account has been deactivated. Contact support.");
+        }
+
+        return buildAuthResponse(user);
     }
 
     // ---- Token helpers ----

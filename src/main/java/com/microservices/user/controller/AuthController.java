@@ -57,7 +57,7 @@ public class AuthController {
 
     @Operation(
         summary = "Login with email and password",
-        description = "Intercepted by JwtAuthenticationFilter before reaching this method. Send JSON with `email` and `password`."
+        description = "Returns an access token, refresh token, and user profile on success."
     )
     @RequestBody(
         required = true,
@@ -76,14 +76,13 @@ public class AuthController {
     )
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Returns access token, refresh token and user profile"),
+        @ApiResponse(responseCode = "400", description = "Blank email or password"),
         @ApiResponse(responseCode = "401", description = "Invalid credentials"),
-        @ApiResponse(
-                responseCode = "403",
-                description = "Email not verified yet, or CORS rejected — see Auth tag description")
+        @ApiResponse(responseCode = "403", description = "Email not verified, or account deactivated")
     })
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login() {
-        return ResponseEntity.ok().build();
+    public ResponseEntity<AuthResponse> login(@Valid @org.springframework.web.bind.annotation.RequestBody LoginRequest request) {
+        return ResponseEntity.ok(authService.login(request));
     }
 
     @Operation(summary = "Login with a Google ID token (from Google Identity Services)")

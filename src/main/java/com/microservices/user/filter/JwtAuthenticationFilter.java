@@ -30,15 +30,13 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private static final String LOGIN_PATH = "/v1/auth/login";
-
     private final AuthenticationManager authenticationManager;
     private final AuthService authService;
     private final ObjectMapper objectMapper;
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !(request.getServletPath().equals(LOGIN_PATH) && "POST".equalsIgnoreCase(request.getMethod()));
+        return true; // Login is now handled by AuthController — this filter is no longer active
     }
 
     @Override
