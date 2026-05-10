@@ -8,6 +8,7 @@ import com.microservices.user.entity.User;
 import com.microservices.user.exception.ResourceNotFoundException;
 import com.microservices.user.repository.UserRepository;
 import com.microservices.user.service.AuthService;
+import com.microservices.user.service.BranchValidationService;
 import com.microservices.user.service.EmailService;
 import com.microservices.user.service.JwtService;
 import com.microservices.user.service.TokenBlacklistService;
@@ -42,6 +43,7 @@ public class AuthServiceImpl implements AuthService {
     private final StringRedisTemplate redisTemplate;
     private final RestTemplate restTemplate;
     private final EmailService emailService;
+    private final BranchValidationService branchValidationService;
 
     @Value("${jwt.secret}")
     private String jwtSecret;
@@ -57,6 +59,7 @@ public class AuthServiceImpl implements AuthService {
 
     private static final String REFRESH_PREFIX = "auth:refresh:";
     private static final String RESET_PREFIX   = "auth:reset:";
+    private static final String VERIFY_PREFIX  = "auth:verify:";
 
     // ---- Register ----
 
@@ -66,19 +69,32 @@ public class AuthServiceImpl implements AuthService {
             throw new IllegalArgumentException("Email already registered: " + request.getEmail());
         }
 
+        if (!branchValidationService.branchExists(request.getBranchId())) {
+            throw new IllegalArgumentException("Unknown or invalid branch. Pick a branch from the branch list.");
+        }
+
         User user = User.builder()
                 .email(request.getEmail())
                 .name(request.getName())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
-                .role(request.getRole() != null ? request.getRole() : User.Role.CUSTOMER)
+                .role(User.Role.CUSTOMER)
                 .branchId(request.getBranchId())
+                .emailVerified(false)
                 .build();
 
         User saved = userRepository.save(user);
+
+        String token = UUID.randomUUID().toString();
+        redisTemplate.opsForValue().set(
+                VERIFY_PREFIX + token,
+                saved.getId().toString(),
+                Duration.ofHours(24)
+        );
+        String verifyLink = frontendUrl + "/verify-email?token=" + token;
         try {
-            emailService.sendWelcome(saved.getEmail(), saved.getName());
+            emailService.sendEmailVerification(saved.getEmail(), saved.getName(), verifyLink);
         } catch (Exception e) {
-            log.warn("Welcome email could not be queued for {}: {}", saved.getEmail(), e.getMessage());
+            log.warn("Verification email could not be queued for {}: {}", saved.getEmail(), e.getMessage());
         }
 
         return UserResponse.from(saved);
@@ -132,6 +148,10 @@ public class AuthServiceImpl implements AuthService {
 
         User user = userRepository.findById(UUID.fromString(userId))
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (!user.isEmailVerified()) {
+            throw new IllegalStateException("Verify your email before signing in.");
+        }
 
         redisTemplate.delete(REFRESH_PREFIX + refreshToken);
         String newAccessToken  = jwtService.generateAccessToken(user);
@@ -200,6 +220,45 @@ public class AuthServiceImpl implements AuthService {
         redisTemplate.delete(RESET_PREFIX + token);
     }
 
+    @Override
+    public void verifyEmail(String token) {
+        if (token == null || token.isBlank()) {
+            throw new IllegalArgumentException("Verification token is required");
+        }
+        String userId = redisTemplate.opsForValue().get(VERIFY_PREFIX + token);
+        if (userId == null) {
+            throw new IllegalArgumentException("Invalid or expired verification link");
+        }
+
+        User user = userRepository.findById(UUID.fromString(userId))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        user.setEmailVerified(true);
+        userRepository.save(user);
+        redisTemplate.delete(VERIFY_PREFIX + token);
+    }
+
+    @Override
+    public void resendVerification(String email) {
+        userRepository.findByEmail(email).ifPresent(user -> {
+            if (user.isEmailVerified()) {
+                return;
+            }
+            String token = UUID.randomUUID().toString();
+            redisTemplate.opsForValue().set(
+                    VERIFY_PREFIX + token,
+                    user.getId().toString(),
+                    Duration.ofHours(24)
+            );
+            String verifyLink = frontendUrl + "/verify-email?token=" + token;
+            try {
+                emailService.sendEmailVerification(user.getEmail(), user.getName(), verifyLink);
+            } catch (Exception e) {
+                log.warn("Verification email could not be queued for {}: {}", email, e.getMessage());
+            }
+        });
+    }
+
     // ---- Google OAuth ----
 
     @Override
@@ -228,6 +287,7 @@ public class AuthServiceImpl implements AuthService {
                             // Link existing account to Google
                             existing.setOauth2Provider("google");
                             existing.setOauth2ProviderId(googleSub);
+                            existing.setEmailVerified(true);
                             if (existing.getName() == null) existing.setName(name);
                             return userRepository.save(existing);
                         })
@@ -236,6 +296,7 @@ public class AuthServiceImpl implements AuthService {
                                         .email(email)
                                         .name(name)
                                         .role(User.Role.CUSTOMER)
+                                        .emailVerified(true)
                                         .oauth2Provider("google")
                                         .oauth2ProviderId(googleSub)
                                         .build()

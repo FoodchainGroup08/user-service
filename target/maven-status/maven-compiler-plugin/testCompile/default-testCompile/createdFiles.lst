@@ -3,7 +3,6 @@ com/microservices/user/controller/AuthControllerTest.class
 com/microservices/user/filter/JwtAuthenticationFilterTest.class
 com/microservices/user/service/TokenBlacklistServiceImplTest.class
 com/microservices/user/service/JwtServiceImplTest.class
-com/microservices/user/service/AuthServiceImplTest.class
 com/microservices/user/filter/JwtAuthorizationFilterTest.class
 com/microservices/user/service/UserServiceImplTest.class
 com/microservices/user/UserServiceApplicationTests.class

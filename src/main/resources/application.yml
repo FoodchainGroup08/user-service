@@ -57,6 +57,9 @@ jwt:
   access-token-expiry-ms: 900000      # 15 minutes
   refresh-token-expiry-ms: 604800000  # 7 days
 
+branch-service:
+  url: ${BRANCH_SERVICE_URL:http://branch-service}
+
 app:
   kafka:
     topic-email-send: ${KAFKA_TOPIC_EMAIL_SEND:notification.email.send}

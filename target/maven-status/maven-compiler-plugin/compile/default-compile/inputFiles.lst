@@ -1,4 +1,5 @@
 /Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/filter/JwtAuthenticationFilter.java
+/Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/dto/ResendVerificationRequest.java
 /Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/UserServiceApplication.java
 /Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/controller/UserController.java
 /Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/service/impl/KafkaEmailNotificationService.java
@@ -9,6 +10,7 @@
 /Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/service/impl/JwtServiceImpl.java
 /Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/dto/MessageResponse.java
 /Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/dto/ResetPasswordRequest.java
+/Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/service/BranchValidationService.java
 /Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/repository/UserRepository.java
 /Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/controller/AdminUserController.java
 /Users/ubaydah/Desktop/user-service/src/main/java/com/microservices/user/dto/ForgotPasswordRequest.java

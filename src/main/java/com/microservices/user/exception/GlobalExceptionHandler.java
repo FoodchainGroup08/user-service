@@ -29,6 +29,11 @@ public class GlobalExceptionHandler {
         return errorResponse(HttpStatus.BAD_REQUEST, "Bad Request", e.getMessage(), req);
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalState(IllegalStateException e, HttpServletRequest req) {
+        return errorResponse(HttpStatus.FORBIDDEN, "Forbidden", e.getMessage(), req);
+    }
+
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<Map<String, Object>> handleBadCredentials(BadCredentialsException e, HttpServletRequest req) {
         return errorResponse(HttpStatus.UNAUTHORIZED, "Unauthorized", "Invalid email or password", req);

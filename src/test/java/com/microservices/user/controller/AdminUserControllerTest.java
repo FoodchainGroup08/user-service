@@ -5,6 +5,7 @@ import com.microservices.user.dto.UserResponse;
 import com.microservices.user.entity.User;
 import com.microservices.user.exception.ResourceNotFoundException;
 import com.microservices.user.service.AuthService;
+import com.microservices.user.service.BranchValidationService;
 import com.microservices.user.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -41,6 +42,7 @@ class AdminUserControllerTest {
     @MockBean private UserService userService;
     @MockBean private StringRedisTemplate stringRedisTemplate;
     @MockBean private RestTemplate restTemplate;
+    @MockBean private BranchValidationService branchValidationService;
 
     private UUID userId;
     private UserResponse customerResponse;
@@ -74,7 +76,7 @@ class AdminUserControllerTest {
     void getAllUsers_returns200_withList() throws Exception {
         when(userService.findAllUsers(null)).thenReturn(List.of(customerResponse, kitchenStaffResponse));
 
-        mockMvc.perform(get("/admin/users")
+        mockMvc.perform(get("/api/v1/admin/users")
                         .header("X-User-Role", "Admin"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
@@ -88,7 +90,7 @@ class AdminUserControllerTest {
     void getAllUsers_returns200_forHeadOfficeAdminRoleName() throws Exception {
         when(userService.findAllUsers(null)).thenReturn(List.of(customerResponse));
 
-        mockMvc.perform(get("/admin/users")
+        mockMvc.perform(get("/api/v1/admin/users")
                         .header("X-User-Role", "HEAD_OFFICE_ADMIN"))
                 .andExpect(status().isOk());
     }
@@ -98,7 +100,7 @@ class AdminUserControllerTest {
     void getAllUsers_returns200_withRoleFilter() throws Exception {
         when(userService.findAllUsers(User.Role.CUSTOMER)).thenReturn(List.of(customerResponse));
 
-        mockMvc.perform(get("/admin/users")
+        mockMvc.perform(get("/api/v1/admin/users")
                         .header("X-User-Role", "Admin")
                         .param("role", "Customer"))
                 .andExpect(status().isOk())
@@ -109,7 +111,7 @@ class AdminUserControllerTest {
     @Test
     @DisplayName("GET /admin/users: returns 403 when role is not Admin")
     void getAllUsers_returns403_forNonAdmin() throws Exception {
-        mockMvc.perform(get("/admin/users")
+        mockMvc.perform(get("/api/v1/admin/users")
                         .header("X-User-Role", "CUSTOMER"))
                 .andExpect(status().isForbidden());
     }
@@ -117,7 +119,7 @@ class AdminUserControllerTest {
     @Test
     @DisplayName("GET /admin/users: returns 403 when X-User-Role header is missing")
     void getAllUsers_returns403_whenRoleHeaderMissing() throws Exception {
-        mockMvc.perform(get("/admin/users"))
+        mockMvc.perform(get("/api/v1/admin/users"))
                 .andExpect(status().isForbidden());
     }
 
@@ -128,7 +130,7 @@ class AdminUserControllerTest {
     void getUserById_returns200_forValidId() throws Exception {
         when(userService.findById(userId)).thenReturn(customerResponse);
 
-        mockMvc.perform(get("/admin/users/{id}", userId)
+        mockMvc.perform(get("/api/v1/admin/users/{id}", userId)
                         .header("X-User-Role", "Admin"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(userId.toString()))
@@ -143,7 +145,7 @@ class AdminUserControllerTest {
         when(userService.findById(unknownId))
                 .thenThrow(new ResourceNotFoundException("User not found: " + unknownId));
 
-        mockMvc.perform(get("/admin/users/{id}", unknownId)
+        mockMvc.perform(get("/api/v1/admin/users/{id}", unknownId)
                         .header("X-User-Role", "Admin"))
                 .andExpect(status().isNotFound());
     }
@@ -151,7 +153,7 @@ class AdminUserControllerTest {
     @Test
     @DisplayName("GET /admin/users/{id}: returns 403 when role is not Admin")
     void getUserById_returns403_forNonAdmin() throws Exception {
-        mockMvc.perform(get("/admin/users/{id}", userId)
+        mockMvc.perform(get("/api/v1/admin/users/{id}", userId)
                         .header("X-User-Role", "BRANCH_MANAGER"))
                 .andExpect(status().isForbidden());
     }
@@ -172,7 +174,7 @@ class AdminUserControllerTest {
         doNothing().when(userService).updateUserStatus(eq(userId), eq(false));
         when(userService.findById(userId)).thenReturn(inactiveResponse);
 
-        mockMvc.perform(patch("/admin/users/{id}/status", userId)
+        mockMvc.perform(patch("/api/v1/admin/users/{id}/status", userId)
                         .header("X-User-Role", "Admin")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("status", "inactive"))))
@@ -186,7 +188,7 @@ class AdminUserControllerTest {
         doNothing().when(userService).updateUserStatus(eq(userId), eq(true));
         when(userService.findById(userId)).thenReturn(customerResponse);
 
-        mockMvc.perform(patch("/admin/users/{id}/status", userId)
+        mockMvc.perform(patch("/api/v1/admin/users/{id}/status", userId)
                         .header("X-User-Role", "Admin")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("status", "active"))))
@@ -197,7 +199,7 @@ class AdminUserControllerTest {
     @Test
     @DisplayName("PATCH /admin/users/{id}/status: returns 403 when role is not Admin")
     void updateStatus_returns403_forNonAdmin() throws Exception {
-        mockMvc.perform(patch("/admin/users/{id}/status", userId)
+        mockMvc.perform(patch("/api/v1/admin/users/{id}/status", userId)
                         .header("X-User-Role", "KITCHEN_STAFF")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("status", "inactive"))))
@@ -207,7 +209,7 @@ class AdminUserControllerTest {
     @Test
     @DisplayName("PATCH /admin/users/{id}/status: returns 400 for invalid status value")
     void updateStatus_returns400_forInvalidStatusValue() throws Exception {
-        mockMvc.perform(patch("/admin/users/{id}/status", userId)
+        mockMvc.perform(patch("/api/v1/admin/users/{id}/status", userId)
                         .header("X-User-Role", "Admin")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("status", "suspended"))))

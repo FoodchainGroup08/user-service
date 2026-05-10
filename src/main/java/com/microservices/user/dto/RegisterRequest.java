@@ -1,16 +1,16 @@
 package com.microservices.user.dto;
 
-import com.microservices.user.entity.User;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
 import java.util.UUID;
 
 @Data
-@Schema(description = "Payload for creating a new user account")
+@Schema(description = "Payload for creating a new customer account (role is always CUSTOMER)")
 public class RegisterRequest {
 
     @Schema(description = "User's full name", example = "John Doe")
@@ -36,17 +36,11 @@ public class RegisterRequest {
     )
     private String password;
 
+    @NotNull(message = "Branch is required")
     @Schema(
-        description = "User role. Defaults to CUSTOMER if omitted.",
-        example = "CUSTOMER",
-        allowableValues = {"CUSTOMER", "KITCHEN_STAFF", "BRANCH_MANAGER", "HEAD_OFFICE_ADMIN"}
-    )
-    private User.Role role;
-
-    @Schema(
-        description = "ID of the branch this user belongs to. Required for BRANCH_MANAGER and KITCHEN_STAFF. Leave null for CUSTOMER.",
-        example = "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-        nullable = true
+        description = "Branch the customer registers under — must exist (see GET /api/v1/branches).",
+        example = "a0000001-0000-4000-8000-000000000001",
+        requiredMode = Schema.RequiredMode.REQUIRED
     )
     private UUID branchId;
 }

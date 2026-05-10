@@ -89,6 +89,12 @@
             <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
         </dependency>
 
+        <!-- Load-balanced RestTemplate (branch-service validation) -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-loadbalancer</artifactId>
+        </dependency>
+
         <!-- Config Client -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>

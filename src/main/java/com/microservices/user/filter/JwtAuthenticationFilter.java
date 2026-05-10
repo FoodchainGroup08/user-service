@@ -23,14 +23,14 @@ import java.io.IOException;
 import java.util.Map;
 
 /**
- * Intercepts POST /api/auth/login. Authenticates credentials via AuthenticationManager,
+ * Intercepts POST .../v1/auth/login. Authenticates credentials via AuthenticationManager,
  * then writes a JWT AuthResponse. All other paths are skipped via shouldNotFilter.
  */
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private static final String LOGIN_PATH = "/auth/login";
+    private static final String LOGIN_PATH = "/v1/auth/login";
 
     private final AuthenticationManager authenticationManager;
     private final AuthService authService;
@@ -53,6 +53,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             );
 
             User user = (User) authentication.getPrincipal();
+            if (!user.isEmailVerified()) {
+                response.setStatus(HttpStatus.FORBIDDEN.value());
+                response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                objectMapper.writeValue(response.getOutputStream(),
+                        Map.of(
+                                "error", "Email not verified",
+                                "status", 403,
+                                "message", "Please verify your email before signing in."));
+                return;
+            }
+
             AuthResponse authResponse = authService.buildAuthResponse(user);
 
             response.setStatus(HttpStatus.OK.value());

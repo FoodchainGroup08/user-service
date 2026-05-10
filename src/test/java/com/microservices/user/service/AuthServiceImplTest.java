@@ -52,9 +52,12 @@ class AuthServiceImplTest {
     @Mock private ValueOperations<String, String> valueOperations;
     @Mock private RestTemplate restTemplate;
     @Mock private EmailService emailService;
+    @Mock private BranchValidationService branchValidationService;
 
     @InjectMocks
     private AuthServiceImpl authService;
+
+    private static final UUID VALID_BRANCH_ID = UUID.fromString("a0000001-0000-4000-8000-000000000001");
 
     private UUID testUserId;
     private User testUser;
@@ -72,9 +75,11 @@ class AuthServiceImplTest {
                 .email("user@example.com")
                 .passwordHash("encoded-password")
                 .role(User.Role.CUSTOMER)
+                .emailVerified(true)
                 .build();
 
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(branchValidationService.branchExists(any(UUID.class))).thenReturn(true);
     }
 
     // ---- register ----
@@ -85,16 +90,27 @@ class AuthServiceImplTest {
         RegisterRequest request = new RegisterRequest();
         request.setEmail("new@example.com");
         request.setPassword("Secure@123!");
+        request.setBranchId(VALID_BRANCH_ID);
+
+        User savedStub = User.builder()
+                .id(testUserId)
+                .email("new@example.com")
+                .passwordHash("hashed-password")
+                .role(User.Role.CUSTOMER)
+                .branchId(VALID_BRANCH_ID)
+                .emailVerified(false)
+                .build();
 
         when(userRepository.existsByEmail("new@example.com")).thenReturn(false);
         when(passwordEncoder.encode("Secure@123!")).thenReturn("hashed-password");
-        when(userRepository.save(any(User.class))).thenReturn(testUser);
+        when(userRepository.save(any(User.class))).thenReturn(savedStub);
 
         UserResponse response = authService.register(request);
 
         assertNotNull(response);
         verify(userRepository).save(any(User.class));
-        verify(emailService).sendWelcome(anyString(), any());
+        verify(emailService).sendEmailVerification(anyString(), any(), argThat(link -> link.contains("/verify-email?token=")));
+        verify(valueOperations).set(startsWith("auth:verify:"), eq(savedStub.getId().toString()), eq(Duration.ofHours(24)));
     }
 
     @Test
@@ -103,52 +119,66 @@ class AuthServiceImplTest {
         RegisterRequest request = new RegisterRequest();
         request.setEmail("new@example.com");
         request.setPassword("PlainText@1!");
+        request.setBranchId(VALID_BRANCH_ID);
+
+        User savedStub = User.builder()
+                .id(testUserId)
+                .email("new@example.com")
+                .role(User.Role.CUSTOMER)
+                .branchId(VALID_BRANCH_ID)
+                .emailVerified(false)
+                .build();
 
         when(userRepository.existsByEmail(anyString())).thenReturn(false);
         when(passwordEncoder.encode("PlainText@1!")).thenReturn("bcrypt-hash");
-        when(userRepository.save(any(User.class))).thenReturn(testUser);
+        when(userRepository.save(any(User.class))).thenReturn(savedStub);
 
         authService.register(request);
 
         verify(passwordEncoder).encode("PlainText@1!");
         verify(userRepository).save(argThat(u -> "bcrypt-hash".equals(u.getPasswordHash())));
-        verify(emailService).sendWelcome(anyString(), any());
+        verify(emailService).sendEmailVerification(anyString(), any(), anyString());
     }
 
     @Test
-    @DisplayName("register: defaults role to CUSTOMER when not provided")
-    void register_defaultsToCustomerRole_whenRoleNull() {
+    @DisplayName("register: always assigns CUSTOMER role")
+    void register_alwaysCustomerRole() {
         RegisterRequest request = new RegisterRequest();
         request.setEmail("new@example.com");
         request.setPassword("Secure@123!");
-        request.setRole(null);
+        request.setBranchId(VALID_BRANCH_ID);
+
+        User savedStub = User.builder()
+                .id(testUserId)
+                .email("new@example.com")
+                .role(User.Role.CUSTOMER)
+                .branchId(VALID_BRANCH_ID)
+                .emailVerified(false)
+                .build();
 
         when(userRepository.existsByEmail(anyString())).thenReturn(false);
         when(passwordEncoder.encode(anyString())).thenReturn("hash");
-        when(userRepository.save(any(User.class))).thenReturn(testUser);
+        when(userRepository.save(any(User.class))).thenReturn(savedStub);
 
         authService.register(request);
 
         verify(userRepository).save(argThat(u -> u.getRole() == User.Role.CUSTOMER));
-        verify(emailService).sendWelcome(anyString(), any());
     }
 
     @Test
-    @DisplayName("register: uses the provided role when specified")
-    void register_usesProvidedRole() {
+    @DisplayName("register: rejects unknown branch id")
+    void register_throws_forUnknownBranch() {
         RegisterRequest request = new RegisterRequest();
-        request.setEmail("manager@example.com");
+        request.setEmail("new@example.com");
         request.setPassword("Secure@123!");
-        request.setRole(User.Role.BRANCH_MANAGER);
+        request.setBranchId(UUID.randomUUID());
 
+        when(branchValidationService.branchExists(request.getBranchId())).thenReturn(false);
         when(userRepository.existsByEmail(anyString())).thenReturn(false);
-        when(passwordEncoder.encode(anyString())).thenReturn("hash");
-        when(userRepository.save(any(User.class))).thenReturn(testUser);
 
-        authService.register(request);
-
-        verify(userRepository).save(argThat(u -> u.getRole() == User.Role.BRANCH_MANAGER));
-        verify(emailService).sendWelcome(anyString(), any());
+        assertThrows(IllegalArgumentException.class, () -> authService.register(request));
+        verify(userRepository, never()).save(any());
+        verify(emailService, never()).sendEmailVerification(anyString(), any(), anyString());
     }
 
     @Test
@@ -157,12 +187,13 @@ class AuthServiceImplTest {
         RegisterRequest request = new RegisterRequest();
         request.setEmail("existing@example.com");
         request.setPassword("Secure@123!");
+        request.setBranchId(VALID_BRANCH_ID);
 
         when(userRepository.existsByEmail("existing@example.com")).thenReturn(true);
 
         assertThrows(IllegalArgumentException.class, () -> authService.register(request));
         verify(userRepository, never()).save(any());
-        verify(emailService, never()).sendWelcome(anyString(), any());
+        verify(emailService, never()).sendEmailVerification(anyString(), any(), anyString());
     }
 
     // ---- buildAuthResponse ----
@@ -315,6 +346,26 @@ class AuthServiceImplTest {
         request.setRefreshToken(token);
 
         assertThrows(ResourceNotFoundException.class, () -> authService.refresh(request));
+    }
+
+    @Test
+    @DisplayName("refresh: throws IllegalStateException when email is not verified")
+    void refresh_throwsIllegalState_whenEmailNotVerified() {
+        User unverified = User.builder()
+                .id(testUserId)
+                .email("user@example.com")
+                .role(User.Role.CUSTOMER)
+                .emailVerified(false)
+                .build();
+
+        String token = buildValidRefreshToken(testUserId);
+        when(valueOperations.get("auth:refresh:" + token)).thenReturn(testUserId.toString());
+        when(userRepository.findById(testUserId)).thenReturn(Optional.of(unverified));
+
+        RefreshTokenRequest request = new RefreshTokenRequest();
+        request.setRefreshToken(token);
+
+        assertThrows(IllegalStateException.class, () -> authService.refresh(request));
     }
 
     // ---- logout ----

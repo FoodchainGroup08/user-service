@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/v1/users")
 @RequiredArgsConstructor
 @Tag(name = "Users", description = "User profile and management endpoints")
 @SecurityRequirement(name = "bearerAuth")

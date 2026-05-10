@@ -1,8 +1,11 @@
 package com.microservices.user.config;
 
 import com.microservices.user.service.UserService;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -30,8 +33,17 @@ public class AuthManagerConfig {
         return new ProviderManager(provider);
     }
 
+    /** Plain client (e.g. Google tokeninfo) — must stay non-load-balanced. */
     @Bean
+    @Primary
     public RestTemplate restTemplate() {
+        return new RestTemplate();
+    }
+
+    @Bean
+    @LoadBalanced
+    @Qualifier("loadBalancedRestTemplate")
+    public RestTemplate loadBalancedRestTemplate() {
         return new RestTemplate();
     }
 }

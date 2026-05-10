@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: com.microservices.user.service.AuthServiceImplTest
 -------------------------------------------------------------------------------
-Tests run: 19, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.751 s -- in com.microservices.user.service.AuthServiceImplTest
+Tests run: 20, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.101 s -- in com.microservices.user.service.AuthServiceImplTest

@@ -121,4 +121,33 @@ public class EmailTemplates {
             );
         return wrap("", body);
     }
+
+    public static String emailVerification(String name, String verifyLink) {
+        String body =
+            """
+            <div class="header">
+              <h1 class="header-title">Verify Your Email</h1>
+              <p class="header-sub">Confirm your FoodChain account</p>
+            </div>
+            <div class="body">
+              <p class="greeting">Hi %s,</p>
+              <p class="text">
+                Thanks for signing up. Click the button below to verify your email address.
+                This link expires in <strong>24 hours</strong>.
+              </p>
+              <div class="btn-wrap">
+                <a class="btn" href="%s">Verify Email</a>
+              </div>
+              <hr class="divider">
+              <p class="note">
+                If the button doesn't work, copy and paste this link into your browser:<br>
+                <a href="%s" style="color:#e85d04;word-break:break-all;">%s</a>
+              </p>
+            </div>
+            """.formatted(
+                name != null ? name : "there",
+                verifyLink, verifyLink, verifyLink
+            );
+        return wrap("", body);
+    }
 }

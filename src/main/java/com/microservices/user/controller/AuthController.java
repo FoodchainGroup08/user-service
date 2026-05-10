@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/v1/auth")
 @RequiredArgsConstructor
 @Tag(name = "Auth", description = "Registration, login, token refresh, password reset and session endpoints")
 public class AuthController {
@@ -97,6 +97,27 @@ public class AuthController {
     public ResponseEntity<MessageResponse> resetPassword(@Valid @org.springframework.web.bind.annotation.RequestBody ResetPasswordRequest request) {
         authService.resetPassword(request.getToken(), request.getNewPassword());
         return ResponseEntity.ok(new MessageResponse("Password updated successfully."));
+    }
+
+    @Operation(summary = "Verify email using the token from the verification link")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Email verified"),
+        @ApiResponse(responseCode = "400", description = "Invalid or expired token")
+    })
+    @GetMapping("/verify-email")
+    public ResponseEntity<MessageResponse> verifyEmail(@RequestParam String token) {
+        authService.verifyEmail(token);
+        return ResponseEntity.ok(new MessageResponse("Your email has been verified. You can sign in now."));
+    }
+
+    @Operation(summary = "Resend the verification email (same response whether or not the email exists)")
+    @ApiResponse(responseCode = "200", description = "Generic success message")
+    @PostMapping("/resend-verification")
+    public ResponseEntity<MessageResponse> resendVerification(
+            @Valid @org.springframework.web.bind.annotation.RequestBody ResendVerificationRequest request) {
+        authService.resendVerification(request.getEmail());
+        return ResponseEntity.ok(new MessageResponse(
+                "If an account exists for that address and is not yet verified, a new verification email has been sent."));
     }
 
     @Operation(summary = "Refresh the access token using a valid refresh token")

@@ -49,6 +49,17 @@ public class KafkaEmailNotificationService implements EmailService {
                 .build());
     }
 
+    @Override
+    public void sendEmailVerification(String toEmail, String toName, String verifyLink) {
+        publish(EmailSendEvent.builder()
+                .toEmail(toEmail)
+                .toName(toName)
+                .subject("Verify your FoodChain account")
+                .htmlContent(EmailTemplates.emailVerification(toName, verifyLink))
+                .emailType("EMAIL_VERIFICATION")
+                .build());
+    }
+
     private void publish(EmailSendEvent event) {
         try {
             String json = objectMapper.writeValueAsString(event);

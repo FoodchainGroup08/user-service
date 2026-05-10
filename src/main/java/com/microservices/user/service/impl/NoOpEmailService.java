@@ -22,4 +22,9 @@ public class NoOpEmailService implements EmailService {
     public void sendPasswordReset(String toEmail, String toName, String resetLink) {
         log.debug("Email not configured: skip password reset to {}", toEmail);
     }
+
+    @Override
+    public void sendEmailVerification(String toEmail, String toName, String verifyLink) {
+        log.debug("Email not configured: skip verification email to {}", toEmail);
+    }
 }

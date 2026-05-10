@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/admin/users")
+@RequestMapping("/v1/admin/users")
 @RequiredArgsConstructor
 @Tag(name = "Admin - Users", description = "Admin-only endpoints for listing and managing user accounts")
 @SecurityRequirement(name = "bearerAuth")
