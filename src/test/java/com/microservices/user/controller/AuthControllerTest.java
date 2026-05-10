@@ -70,7 +70,7 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.email").value("user@example.com"))
-                .andExpect(jsonPath("$.role").value("CUSTOMER"));
+                .andExpect(jsonPath("$.role").value("Customer"));
     }
 
     @Test

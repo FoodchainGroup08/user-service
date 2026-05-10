@@ -1,5 +1,7 @@
 package com.microservices.user.entity;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
@@ -106,6 +108,28 @@ public class User implements UserDetails {
     }
 
     public enum Role {
-        CUSTOMER, KITCHEN_STAFF, BRANCH_MANAGER, HEAD_OFFICE_ADMIN
+        CUSTOMER("Customer"),
+        KITCHEN_STAFF("Kitchen Staff"),
+        BRANCH_MANAGER("Branch Manager"),
+        HEAD_OFFICE_ADMIN("Admin");
+
+        private final String displayName;
+
+        Role(String displayName) {
+            this.displayName = displayName;
+        }
+
+        @JsonValue
+        public String getDisplayName() {
+            return displayName;
+        }
+
+        @JsonCreator
+        public static Role fromDisplayName(String value) {
+            for (Role r : values()) {
+                if (r.displayName.equalsIgnoreCase(value) || r.name().equalsIgnoreCase(value)) return r;
+            }
+            throw new IllegalArgumentException("Unknown role: " + value);
+        }
     }
 }

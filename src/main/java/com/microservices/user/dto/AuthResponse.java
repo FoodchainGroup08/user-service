@@ -17,4 +17,9 @@ public class AuthResponse {
     private String tokenType = "Bearer";
     private long expiresIn;
     private UserResponse user;
+
+    /** Alias for {@code accessToken} — used by the frontend as {@code token}. */
+    public String getToken() {
+        return accessToken;
+    }
 }

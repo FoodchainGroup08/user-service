@@ -49,6 +49,10 @@ jwt:
   refresh-token-expiry-ms: 604800000  # 7 days
 
 app:
+  brevo:
+    api-key: ${BREVO_API_KEY:}
+    sender-email: ${BREVO_SENDER_EMAIL:noreply@foodchain.com}
+    sender-name: FoodChain
   frontend-url: ${FRONTEND_URL:http://localhost:5173}
   oauth2:
     enabled: ${OAUTH2_ENABLED:false}

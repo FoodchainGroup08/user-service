@@ -28,6 +28,10 @@ Handles authentication and user management for the FoodChain platform. Provides 
   - [List All Users](#get-users)
   - [Get User by ID](#get-usersid)
   - [Update User](#patch-usersid)
+- [Admin User Endpoints](#admin-user-endpoints)
+  - [List All Users (Admin)](#get-adminusers)
+  - [Get User by ID (Admin)](#get-adminusersid)
+  - [Update User Status](#patch-adminusersidstatus)
 - [Error Responses](#error-responses)
 - [Password Rules](#password-rules)
 - [Swagger UI](#swagger-ui)
@@ -148,12 +152,16 @@ The access token is returned by `/auth/login`, `/auth/register`, `/auth/google`,
 
 ## Roles
 
-| Role | Description |
-|------|-------------|
-| `CUSTOMER` | Default role. Can view and manage their own profile. |
-| `KITCHEN_STAFF` | Kitchen operations staff. Must be assigned a branch. |
-| `BRANCH_MANAGER` | Manages a specific branch. Must be assigned a branch. |
-| `HEAD_OFFICE_ADMIN` | Full administrative access across all users and branches. |
+Role values are serialised as display names in all API responses and accepted as display names in requests.
+
+| Display name (JSON) | Enum constant | Description |
+|---|---|---|
+| `Customer` | `CUSTOMER` | Default role. Can view and manage their own profile. |
+| `Kitchen Staff` | `KITCHEN_STAFF` | Kitchen operations staff. Must be assigned a branch. |
+| `Branch Manager` | `BRANCH_MANAGER` | Manages a specific branch. Must be assigned a branch. |
+| `Admin` | `HEAD_OFFICE_ADMIN` | Full administrative access across all users and branches. |
+
+Spring Security authority strings continue to use the enum constant names prefixed with `ROLE_` internally (e.g. `ROLE_HEAD_OFFICE_ADMIN`).
 
 ---
 
@@ -170,7 +178,7 @@ Creates a new user account. Returns the created user's profile.
   "name": "John Doe",
   "email": "john@example.com",
   "password": "Secure@123!",
-  "role": "CUSTOMER",
+  "role": "Customer",
   "branchId": null
 }
 ```
@@ -180,8 +188,8 @@ Creates a new user account. Returns the created user's profile.
 | `name` | string | No | Full name |
 | `email` | string | Yes | Must be a valid email address |
 | `password` | string | Yes | See [Password Rules](#password-rules) |
-| `role` | string | No | Defaults to `CUSTOMER`. One of: `CUSTOMER`, `KITCHEN_STAFF`, `BRANCH_MANAGER`, `HEAD_OFFICE_ADMIN` |
-| `branchId` | UUID | No | Required for `BRANCH_MANAGER` and `KITCHEN_STAFF`. Leave `null` for `CUSTOMER` |
+| `role` | string | No | Defaults to `Customer`. One of: `Customer`, `Kitchen Staff`, `Branch Manager`, `Admin` |
+| `branchId` | UUID | No | Required for `Branch Manager` and `Kitchen Staff`. Leave `null` for `Customer` |
 
 **Response `201 Created`:**
 
@@ -190,7 +198,7 @@ Creates a new user account. Returns the created user's profile.
   "id": "7264-58d3-...",
   "name": "John Doe",
   "email": "john@example.com",
-  "role": "CUSTOMER",
+  "role": "Customer",
   "branchId": null,
   "isActive": true,
   "createdAt": "2026-05-10T04:30:00Z"
@@ -223,6 +231,7 @@ Authenticates a user and returns a token pair. This endpoint is intercepted by t
 ```json
 {
   "accessToken": "eyJhbGciOiJIUzI1NiJ9...",
+  "token": "eyJhbGciOiJIUzI1NiJ9...",
   "refreshToken": "eyJhbGciOiJIUzI1NiJ9...",
   "tokenType": "Bearer",
   "expiresIn": 900,
@@ -230,7 +239,7 @@ Authenticates a user and returns a token pair. This endpoint is intercepted by t
     "id": "7264-58d3-...",
     "name": "John Doe",
     "email": "john@example.com",
-    "role": "CUSTOMER",
+    "role": "Customer",
     "branchId": null,
     "isActive": true,
     "createdAt": "2026-05-10T04:30:00Z"
@@ -241,6 +250,7 @@ Authenticates a user and returns a token pair. This endpoint is intercepted by t
 | Field | Type | Description |
 |-------|------|-------------|
 | `accessToken` | string | Short-lived JWT. Include in `Authorization: Bearer <token>` header |
+| `token` | string | Alias for `accessToken` — same value, provided for frontend convenience |
 | `refreshToken` | string | Long-lived token. Use with `/auth/refresh` to get a new pair |
 | `tokenType` | string | Always `"Bearer"` |
 | `expiresIn` | number | Access token lifetime in **seconds** (default 900 = 15 min) |
@@ -399,7 +409,7 @@ Authorization: Bearer <access_token>
   "id": "7264-58d3-...",
   "name": "John Doe",
   "email": "john@example.com",
-  "role": "CUSTOMER",
+  "role": "Customer",
   "branchId": null,
   "isActive": true,
   "createdAt": "2026-05-10T04:30:00Z"
@@ -437,7 +447,7 @@ Authorization: Bearer <access_token>
 
 ### `GET /users`
 
-Returns all users. **Requires `HEAD_OFFICE_ADMIN` role.**
+Returns all users. **Requires `Admin` role.**
 
 **Headers:**
 ```
@@ -452,7 +462,7 @@ Authorization: Bearer <access_token>
     "id": "7264-58d3-...",
     "name": "John Doe",
     "email": "john@example.com",
-    "role": "CUSTOMER",
+    "role": "Customer",
     "branchId": null,
     "isActive": true,
     "createdAt": "2026-05-10T04:30:00Z"
@@ -465,13 +475,13 @@ Authorization: Bearer <access_token>
 | Code | Reason |
 |------|--------|
 | `401` | Missing or invalid token |
-| `403` | Authenticated but not `HEAD_OFFICE_ADMIN` |
+| `403` | Authenticated but not `Admin` |
 
 ---
 
 ### `GET /users/{id}`
 
-Returns a single user's profile by UUID. **Requires `HEAD_OFFICE_ADMIN` or `BRANCH_MANAGER` role.**
+Returns a single user's profile by UUID. **Requires `Admin` or `Branch Manager` role.**
 
 **Headers:**
 ```
@@ -498,7 +508,7 @@ Authorization: Bearer <access_token>
 
 ### `PATCH /users/{id}`
 
-Partially updates a user. All fields are optional — only provided fields are changed. **Requires `HEAD_OFFICE_ADMIN` or `BRANCH_MANAGER` role.**
+Partially updates a user. All fields are optional — only provided fields are changed. **Requires `Admin` or `Branch Manager` role.**
 
 **Headers:**
 ```
@@ -515,7 +525,7 @@ Authorization: Bearer <access_token>
 
 ```json
 {
-  "role": "BRANCH_MANAGER",
+  "role": "Branch Manager",
   "branchId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
   "isActive": true
 }
@@ -523,7 +533,7 @@ Authorization: Bearer <access_token>
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `role` | string | One of: `CUSTOMER`, `KITCHEN_STAFF`, `BRANCH_MANAGER`, `HEAD_OFFICE_ADMIN` |
+| `role` | string | One of: `Customer`, `Kitchen Staff`, `Branch Manager`, `Admin` |
 | `branchId` | UUID \| null | Set to `null` to remove branch association |
 | `isActive` | boolean | Set to `false` to deactivate the account |
 
@@ -535,6 +545,101 @@ Authorization: Bearer <access_token>
 |------|--------|
 | `401` | Missing or invalid token |
 | `403` | Insufficient role |
+| `404` | User not found |
+
+---
+
+## Admin User Endpoints
+
+These endpoints read the `X-User-Role` header forwarded by the API gateway. Accepted values: `Admin` or `HEAD_OFFICE_ADMIN`. No JWT verification is performed inside the service — the gateway is expected to validate the token and set the header.
+
+### `GET /admin/users`
+
+List all users. Optionally filter by role.
+
+**Request headers** — `X-User-Role: Admin`
+
+**Query parameters**
+
+| Name | Required | Description |
+|---|---|---|
+| `role` | No | Filter by role display name: `Customer`, `Kitchen Staff`, `Branch Manager`, `Admin` |
+
+**Response `200 OK`:**
+
+```json
+[
+  {
+    "id": "7264-58d3-...",
+    "name": "Alice",
+    "email": "alice@example.com",
+    "role": "Customer",
+    "status": "active",
+    "branchId": null
+  }
+]
+```
+
+**Error responses:**
+
+| Code | Reason |
+|------|--------|
+| `400` | Unrecognised role filter value |
+| `403` | Caller is not an Admin |
+
+---
+
+### `GET /admin/users/{id}`
+
+Fetch a single user by UUID.
+
+**Request headers** — `X-User-Role: Admin`
+
+**Path parameter:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `id` | UUID | The user's unique identifier |
+
+**Response `200 OK`:** Single `AdminUserResponse` object (same fields as list item).
+
+**Error responses:**
+
+| Code | Reason |
+|------|--------|
+| `403` | Caller is not an Admin |
+| `404` | User not found |
+
+---
+
+### `PATCH /admin/users/{id}/status`
+
+Activate or deactivate a user account.
+
+**Request headers** — `X-User-Role: Admin`
+
+**Path parameter:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `id` | UUID | The user's unique identifier |
+
+**Request body:**
+
+```json
+{ "status": "inactive" }
+```
+
+Accepted values: `active`, `inactive`.
+
+**Response `200 OK`:** Updated `AdminUserResponse`.
+
+**Error responses:**
+
+| Code | Reason |
+|------|--------|
+| `400` | Invalid status value |
+| `403` | Caller is not an Admin |
 | `404` | User not found |
 
 ---

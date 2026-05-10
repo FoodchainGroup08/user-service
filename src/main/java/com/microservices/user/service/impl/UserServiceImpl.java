@@ -50,6 +50,25 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public List<UserResponse> findAllUsers(User.Role role) {
+        List<User> users = (role != null)
+                ? userRepository.findByRole(role)
+                : userRepository.findAll();
+        return users.stream()
+                .map(UserResponse::from)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public void updateUserStatus(UUID id, boolean active) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + id));
+        user.setActive(active);
+        userRepository.save(user);
+    }
+
+    @Override
     @Transactional
     public UserResponse updateUser(UUID id, UpdateUserRequest request) {
         User user = userRepository.findById(id)
