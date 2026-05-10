@@ -61,6 +61,9 @@ branch-service:
   url: ${BRANCH_SERVICE_URL:http://branch-service}
 
 app:
+  # Comma-separated. Must include http://localhost:8080 if you use Swagger UI served by the API Gateway.
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000,http://localhost:8080,http://127.0.0.1:8080}
   kafka:
     topic-email-send: ${KAFKA_TOPIC_EMAIL_SEND:notification.email.send}
   frontend-url: ${FRONTEND_URL:http://localhost:5173}

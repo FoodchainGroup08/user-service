@@ -8,14 +8,14 @@ import com.microservices.user.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@ConditionalOnBean(KafkaTemplate.class)
+@ConditionalOnClass(KafkaTemplate.class)
 public class KafkaEmailNotificationService implements EmailService {
 
     private final KafkaTemplate<String, String> kafkaTemplate;

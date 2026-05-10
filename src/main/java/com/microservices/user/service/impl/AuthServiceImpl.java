@@ -188,21 +188,16 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void forgotPassword(String email) {
-        // Silently succeed even if email is not found — prevents user enumeration
-        userRepository.findByEmail(email).ifPresent(user -> {
-            String token = UUID.randomUUID().toString();
-            redisTemplate.opsForValue().set(
-                    RESET_PREFIX + token,
-                    user.getId().toString(),
-                    Duration.ofHours(1)
-            );
-            String resetLink = frontendUrl + "/reset-password?token=" + token;
-            try {
-                emailService.sendPasswordReset(email, user.getName(), resetLink);
-            } catch (Exception e) {
-                log.warn("Password reset email could not be queued for {}: {}", email, e.getMessage());
-            }
-        });
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("No account found with this email"));
+        String token = UUID.randomUUID().toString();
+        redisTemplate.opsForValue().set(RESET_PREFIX + token, user.getId().toString(), Duration.ofHours(1));
+        String resetLink = frontendUrl + "/reset-password?token=" + token;
+        try {
+            emailService.sendPasswordReset(email, user.getName(), resetLink);
+        } catch (Exception e) {
+            log.warn("Password reset email could not be queued for {}: {}", email, e.getMessage());
+        }
     }
 
     @Override
@@ -233,6 +228,9 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findById(UUID.fromString(userId))
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
+        if (user.isEmailVerified()) {
+            throw new IllegalStateException("Email is already verified");
+        }
         user.setEmailVerified(true);
         userRepository.save(user);
         redisTemplate.delete(VERIFY_PREFIX + token);
@@ -240,23 +238,19 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void resendVerification(String email) {
-        userRepository.findByEmail(email).ifPresent(user -> {
-            if (user.isEmailVerified()) {
-                return;
-            }
-            String token = UUID.randomUUID().toString();
-            redisTemplate.opsForValue().set(
-                    VERIFY_PREFIX + token,
-                    user.getId().toString(),
-                    Duration.ofHours(24)
-            );
-            String verifyLink = frontendUrl + "/verify-email?token=" + token;
-            try {
-                emailService.sendEmailVerification(user.getEmail(), user.getName(), verifyLink);
-            } catch (Exception e) {
-                log.warn("Verification email could not be queued for {}: {}", email, e.getMessage());
-            }
-        });
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("No account found with this email"));
+        if (user.isEmailVerified()) {
+            throw new IllegalStateException("Email is already verified");
+        }
+        String token = UUID.randomUUID().toString();
+        redisTemplate.opsForValue().set(VERIFY_PREFIX + token, user.getId().toString(), Duration.ofHours(24));
+        String verifyLink = frontendUrl + "/verify-email?token=" + token;
+        try {
+            emailService.sendEmailVerification(user.getEmail(), user.getName(), verifyLink);
+        } catch (Exception e) {
+            log.warn("Verification email could not be queued for {}: {}", email, e.getMessage());
+        }
     }
 
     // ---- Google OAuth ----

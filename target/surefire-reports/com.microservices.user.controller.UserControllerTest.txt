@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: com.microservices.user.controller.UserControllerTest
 -------------------------------------------------------------------------------
-Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.426 s -- in com.microservices.user.controller.UserControllerTest
+Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.445 s -- in com.microservices.user.controller.UserControllerTest

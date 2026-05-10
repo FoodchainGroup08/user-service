@@ -2,9 +2,13 @@ package com.microservices.user.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microservices.user.dto.AuthResponse;
+import com.microservices.user.dto.ForgotPasswordRequest;
 import com.microservices.user.dto.RefreshTokenRequest;
 import com.microservices.user.dto.RegisterRequest;
+import com.microservices.user.dto.ResetPasswordRequest;
+import com.microservices.user.dto.ResendVerificationRequest;
 import com.microservices.user.dto.UserResponse;
+import com.microservices.user.exception.ResourceNotFoundException;
 import com.microservices.user.entity.User;
 import com.microservices.user.service.AuthService;
 import com.microservices.user.service.BranchValidationService;
@@ -188,6 +192,225 @@ class AuthControllerTest {
         when(authService.register(any())).thenThrow(new IllegalArgumentException("Email already registered"));
 
         mockMvc.perform(post("/api/v1/auth/register").contextPath("/api")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    // ---- POST /auth/forgot-password ----
+
+    @Test
+    @DisplayName("forgotPassword: returns 200 OK when email exists")
+    void forgotPassword_returns200_whenEmailExists() throws Exception {
+        ForgotPasswordRequest request = new ForgotPasswordRequest();
+        request.setEmail("user@example.com");
+
+        doNothing().when(authService).forgotPassword("user@example.com");
+
+        mockMvc.perform(post("/api/v1/auth/forgot-password").contextPath("/api")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").exists());
+    }
+
+    @Test
+    @DisplayName("forgotPassword: returns 404 Not Found when email is not registered")
+    void forgotPassword_returns404_whenEmailNotRegistered() throws Exception {
+        ForgotPasswordRequest request = new ForgotPasswordRequest();
+        request.setEmail("ghost@example.com");
+
+        doThrow(new ResourceNotFoundException("No account found with this email"))
+                .when(authService).forgotPassword("ghost@example.com");
+
+        mockMvc.perform(post("/api/v1/auth/forgot-password").contextPath("/api")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("No account found with this email"));
+    }
+
+    @Test
+    @DisplayName("forgotPassword: returns 400 Bad Request for invalid email format")
+    void forgotPassword_returns400_forInvalidEmailFormat() throws Exception {
+        ForgotPasswordRequest request = new ForgotPasswordRequest();
+        request.setEmail("not-an-email");
+
+        mockMvc.perform(post("/api/v1/auth/forgot-password").contextPath("/api")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("forgotPassword: returns 400 Bad Request when email is blank")
+    void forgotPassword_returns400_forBlankEmail() throws Exception {
+        ForgotPasswordRequest request = new ForgotPasswordRequest();
+        request.setEmail("");
+
+        mockMvc.perform(post("/api/v1/auth/forgot-password").contextPath("/api")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    // ---- POST /auth/reset-password ----
+
+    @Test
+    @DisplayName("resetPassword: returns 200 OK for a valid token and new password")
+    void resetPassword_returns200_forValidRequest() throws Exception {
+        ResetPasswordRequest request = new ResetPasswordRequest();
+        request.setToken("valid-token");
+        request.setNewPassword("NewPass@1!");
+
+        doNothing().when(authService).resetPassword("valid-token", "NewPass@1!");
+
+        mockMvc.perform(post("/api/v1/auth/reset-password").contextPath("/api")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").exists());
+    }
+
+    @Test
+    @DisplayName("resetPassword: returns 400 Bad Request for invalid or expired token")
+    void resetPassword_returns400_forInvalidToken() throws Exception {
+        ResetPasswordRequest request = new ResetPasswordRequest();
+        request.setToken("expired-token");
+        request.setNewPassword("NewPass@1!");
+
+        doThrow(new IllegalArgumentException("Invalid or expired reset token"))
+                .when(authService).resetPassword("expired-token", "NewPass@1!");
+
+        mockMvc.perform(post("/api/v1/auth/reset-password").contextPath("/api")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Invalid or expired reset token"));
+    }
+
+    @Test
+    @DisplayName("resetPassword: returns 400 Bad Request when token is blank")
+    void resetPassword_returns400_forBlankToken() throws Exception {
+        ResetPasswordRequest request = new ResetPasswordRequest();
+        request.setToken("");
+        request.setNewPassword("NewPass@1!");
+
+        mockMvc.perform(post("/api/v1/auth/reset-password").contextPath("/api")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("resetPassword: returns 400 Bad Request when new password is too weak")
+    void resetPassword_returns400_forWeakPassword() throws Exception {
+        ResetPasswordRequest request = new ResetPasswordRequest();
+        request.setToken("valid-token");
+        request.setNewPassword("weak");
+
+        mockMvc.perform(post("/api/v1/auth/reset-password").contextPath("/api")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    // ---- GET /auth/verify-email ----
+
+    @Test
+    @DisplayName("verifyEmail: returns 200 OK for a valid token")
+    void verifyEmail_returns200_forValidToken() throws Exception {
+        doNothing().when(authService).verifyEmail("valid-token");
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .get("/api/v1/auth/verify-email").contextPath("/api")
+                        .param("token", "valid-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").exists());
+    }
+
+    @Test
+    @DisplayName("verifyEmail: returns 400 Bad Request for an invalid or expired token")
+    void verifyEmail_returns400_forExpiredToken() throws Exception {
+        doThrow(new IllegalArgumentException("Invalid or expired verification link"))
+                .when(authService).verifyEmail("expired-token");
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .get("/api/v1/auth/verify-email").contextPath("/api")
+                        .param("token", "expired-token"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Invalid or expired verification link"));
+    }
+
+    @Test
+    @DisplayName("verifyEmail: returns 403 Forbidden when email is already verified")
+    void verifyEmail_returns403_whenAlreadyVerified() throws Exception {
+        doThrow(new IllegalStateException("Email is already verified"))
+                .when(authService).verifyEmail("used-token");
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .get("/api/v1/auth/verify-email").contextPath("/api")
+                        .param("token", "used-token"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value("Email is already verified"));
+    }
+
+    // ---- POST /auth/resend-verification ----
+
+    @Test
+    @DisplayName("resendVerification: returns 200 OK for an unverified account")
+    void resendVerification_returns200_forUnverifiedAccount() throws Exception {
+        ResendVerificationRequest request = new ResendVerificationRequest();
+        request.setEmail("user@example.com");
+
+        doNothing().when(authService).resendVerification("user@example.com");
+
+        mockMvc.perform(post("/api/v1/auth/resend-verification").contextPath("/api")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").exists());
+    }
+
+    @Test
+    @DisplayName("resendVerification: returns 404 Not Found when email is not registered")
+    void resendVerification_returns404_whenEmailNotFound() throws Exception {
+        ResendVerificationRequest request = new ResendVerificationRequest();
+        request.setEmail("ghost@example.com");
+
+        doThrow(new ResourceNotFoundException("No account found with this email"))
+                .when(authService).resendVerification("ghost@example.com");
+
+        mockMvc.perform(post("/api/v1/auth/resend-verification").contextPath("/api")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("No account found with this email"));
+    }
+
+    @Test
+    @DisplayName("resendVerification: returns 403 Forbidden when email is already verified")
+    void resendVerification_returns403_whenAlreadyVerified() throws Exception {
+        ResendVerificationRequest request = new ResendVerificationRequest();
+        request.setEmail("verified@example.com");
+
+        doThrow(new IllegalStateException("Email is already verified"))
+                .when(authService).resendVerification("verified@example.com");
+
+        mockMvc.perform(post("/api/v1/auth/resend-verification").contextPath("/api")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value("Email is already verified"));
+    }
+
+    @Test
+    @DisplayName("resendVerification: returns 400 Bad Request for invalid email format")
+    void resendVerification_returns400_forInvalidEmail() throws Exception {
+        ResendVerificationRequest request = new ResendVerificationRequest();
+        request.setEmail("not-an-email");
+
+        mockMvc.perform(post("/api/v1/auth/resend-verification").contextPath("/api")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());

@@ -26,7 +26,17 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/v1/auth")
 @RequiredArgsConstructor
-@Tag(name = "Auth", description = "Registration, login, token refresh, password reset and session endpoints")
+@Tag(
+        name = "Auth",
+        description = """
+                Registration, login, refresh, password reset, email verification.
+
+                **Calling from API Gateway Swagger (`http://localhost:8080`)** requires CORS: user-service allows those origins by default.
+                If you still see **403** with body `Invalid CORS request`, add your browser origin to `APP_CORS_ALLOWED_ORIGINS` / `app.cors.allowed-origins`.
+
+                **Login** may return **403** if the account exists but **email is not verified** (verify via email link first).
+
+                Base path via gateway: `/api/v1/auth`. User-service uses servlet context `/api`, so direct port URLs look like `http://localhost:8086/api/v1/auth/...`.""")
 public class AuthController {
 
     private final AuthService authService;
@@ -34,8 +44,11 @@ public class AuthController {
 
     @Operation(summary = "Register a new user")
     @ApiResponses({
-        @ApiResponse(responseCode = "201", description = "User created"),
-        @ApiResponse(responseCode = "400", description = "Validation error or email already taken")
+        @ApiResponse(responseCode = "201", description = "User created; verify email before login if required by policy."),
+        @ApiResponse(responseCode = "400", description = "Validation error, duplicate email, or unknown branchId"),
+        @ApiResponse(
+                responseCode = "403",
+                description = "CORS rejected (unknown Origin), or Spring Security denied — see Auth tag description")
     })
     @PostMapping("/register")
     public ResponseEntity<UserResponse> register(@Valid @org.springframework.web.bind.annotation.RequestBody RegisterRequest request) {
@@ -63,7 +76,10 @@ public class AuthController {
     )
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Returns access token, refresh token and user profile"),
-        @ApiResponse(responseCode = "401", description = "Invalid credentials")
+        @ApiResponse(responseCode = "401", description = "Invalid credentials"),
+        @ApiResponse(
+                responseCode = "403",
+                description = "Email not verified yet, or CORS rejected — see Auth tag description")
     })
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login() {

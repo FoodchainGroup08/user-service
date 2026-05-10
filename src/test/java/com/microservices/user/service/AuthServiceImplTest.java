@@ -263,14 +263,136 @@ class AuthServiceImplTest {
     }
 
     @Test
-    @DisplayName("forgotPassword: does nothing when email is unknown")
-    void forgotPassword_noEmail_whenUnknown() {
+    @DisplayName("forgotPassword: throws ResourceNotFoundException when email is unknown")
+    void forgotPassword_throwsNotFound_whenEmailUnknown() {
         when(userRepository.findByEmail("noone@example.com")).thenReturn(Optional.empty());
 
-        authService.forgotPassword("noone@example.com");
-
+        assertThrows(ResourceNotFoundException.class, () -> authService.forgotPassword("noone@example.com"));
         verify(valueOperations, never()).set(anyString(), anyString(), any(Duration.class));
         verify(emailService, never()).sendPasswordReset(anyString(), any(), anyString());
+    }
+
+    // ---- reset password ----
+
+    @Test
+    @DisplayName("resetPassword: resets password and deletes token when token is valid")
+    void resetPassword_resetsPassword_forValidToken() {
+        String token = "valid-reset-token";
+        when(valueOperations.get("auth:reset:" + token)).thenReturn(testUserId.toString());
+        when(userRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
+        when(passwordEncoder.encode("NewPass@1!")).thenReturn("new-hashed");
+
+        authService.resetPassword(token, "NewPass@1!");
+
+        verify(userRepository).save(argThat(u -> "new-hashed".equals(u.getPasswordHash())));
+        verify(redisTemplate).delete("auth:reset:" + token);
+    }
+
+    @Test
+    @DisplayName("resetPassword: throws IllegalArgumentException for invalid or expired token")
+    void resetPassword_throws_forInvalidToken() {
+        when(valueOperations.get(anyString())).thenReturn(null);
+
+        assertThrows(IllegalArgumentException.class, () -> authService.resetPassword("bad-token", "NewPass@1!"));
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("resetPassword: throws ResourceNotFoundException when user no longer exists")
+    void resetPassword_throws_whenUserDeleted() {
+        String token = "orphan-token";
+        when(valueOperations.get("auth:reset:" + token)).thenReturn(testUserId.toString());
+        when(userRepository.findById(testUserId)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> authService.resetPassword(token, "NewPass@1!"));
+        verify(userRepository, never()).save(any());
+    }
+
+    // ---- verify email ----
+
+    @Test
+    @DisplayName("verifyEmail: marks email as verified and deletes token for valid token")
+    void verifyEmail_verifiesEmail_forValidToken() {
+        User unverified = User.builder()
+                .id(testUserId).email("user@example.com")
+                .role(User.Role.CUSTOMER).emailVerified(false).build();
+        String token = "valid-verify-token";
+        when(valueOperations.get("auth:verify:" + token)).thenReturn(testUserId.toString());
+        when(userRepository.findById(testUserId)).thenReturn(Optional.of(unverified));
+
+        authService.verifyEmail(token);
+
+        verify(userRepository).save(argThat(User::isEmailVerified));
+        verify(redisTemplate).delete("auth:verify:" + token);
+    }
+
+    @Test
+    @DisplayName("verifyEmail: throws IllegalArgumentException when token is blank")
+    void verifyEmail_throws_forBlankToken() {
+        assertThrows(IllegalArgumentException.class, () -> authService.verifyEmail("  "));
+    }
+
+    @Test
+    @DisplayName("verifyEmail: throws IllegalArgumentException when token is invalid or expired")
+    void verifyEmail_throws_forExpiredToken() {
+        when(valueOperations.get(anyString())).thenReturn(null);
+
+        assertThrows(IllegalArgumentException.class, () -> authService.verifyEmail("expired-token"));
+    }
+
+    @Test
+    @DisplayName("verifyEmail: throws ResourceNotFoundException when user no longer exists")
+    void verifyEmail_throws_whenUserDeleted() {
+        String token = "orphan-verify-token";
+        when(valueOperations.get("auth:verify:" + token)).thenReturn(testUserId.toString());
+        when(userRepository.findById(testUserId)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> authService.verifyEmail(token));
+    }
+
+    @Test
+    @DisplayName("verifyEmail: throws IllegalStateException when email is already verified")
+    void verifyEmail_throws_whenAlreadyVerified() {
+        String token = "already-done-token";
+        when(valueOperations.get("auth:verify:" + token)).thenReturn(testUserId.toString());
+        when(userRepository.findById(testUserId)).thenReturn(Optional.of(testUser)); // testUser has emailVerified=true
+
+        assertThrows(IllegalStateException.class, () -> authService.verifyEmail(token));
+    }
+
+    // ---- resend verification ----
+
+    @Test
+    @DisplayName("resendVerification: queues verification email for unverified user")
+    void resendVerification_sendsEmail_forUnverifiedUser() {
+        User unverified = User.builder()
+                .id(testUserId).email("user@example.com").name("Test")
+                .role(User.Role.CUSTOMER).emailVerified(false).build();
+        when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(unverified));
+
+        authService.resendVerification("user@example.com");
+
+        verify(valueOperations).set(startsWith("auth:verify:"), eq(testUserId.toString()), eq(Duration.ofHours(24)));
+        verify(emailService).sendEmailVerification(eq("user@example.com"), any(),
+                argThat(link -> link.contains("/verify-email?token=")));
+    }
+
+    @Test
+    @DisplayName("resendVerification: throws ResourceNotFoundException when email not found")
+    void resendVerification_throws_whenEmailNotFound() {
+        when(userRepository.findByEmail("ghost@example.com")).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> authService.resendVerification("ghost@example.com"));
+        verify(emailService, never()).sendEmailVerification(anyString(), any(), anyString());
+    }
+
+    @Test
+    @DisplayName("resendVerification: throws IllegalStateException when email is already verified")
+    void resendVerification_throws_whenAlreadyVerified() {
+        when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(testUser)); // emailVerified=true
+
+        assertThrows(IllegalStateException.class, () -> authService.resendVerification("user@example.com"));
+        verify(emailService, never()).sendEmailVerification(anyString(), any(), anyString());
     }
 
     // ---- refresh ----
