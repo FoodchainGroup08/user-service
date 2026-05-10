@@ -1,16 +1,19 @@
 package com.microservices.user.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microservices.user.filter.JwtAuthenticationFilter;
 import com.microservices.user.filter.JwtAuthorizationFilter;
 import com.microservices.user.oauth2.CustomOAuth2UserService;
 import com.microservices.user.oauth2.OAuth2AuthenticationSuccessHandler;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -18,6 +21,10 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+
+import java.io.IOException;
+import java.time.Instant;
+import java.util.Map;
 
 @Configuration
 @EnableWebSecurity
@@ -29,6 +36,7 @@ public class SecurityConfig {
     private final JwtAuthorizationFilter jwtAuthorizationFilter;
     private final CustomOAuth2UserService oAuth2UserService;
     private final OAuth2AuthenticationSuccessHandler oAuth2SuccessHandler;
+    private final ObjectMapper objectMapper;
 
     @Value("${app.oauth2.enabled:false}")
     private boolean oauth2Enabled;
@@ -39,7 +47,6 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Public auth endpoints (paths are relative to context-path /api)
                 .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
                 .requestMatchers(HttpMethod.POST, "/auth/register").permitAll()
                 .requestMatchers(HttpMethod.POST, "/auth/refresh").permitAll()
@@ -47,21 +54,20 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/auth/google").permitAll()
                 .requestMatchers(HttpMethod.POST, "/auth/forgot-password").permitAll()
                 .requestMatchers(HttpMethod.POST, "/auth/reset-password").permitAll()
-                // OAuth2 server-side redirect flow
                 .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
-                // Actuator
                 .requestMatchers("/actuator/health", "/actuator/info").permitAll()
-                // Swagger UI
                 .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
-                // Role-based access
                 .requestMatchers(HttpMethod.GET, "/users").hasRole("HEAD_OFFICE_ADMIN")
                 .requestMatchers(HttpMethod.PATCH, "/users/*").hasAnyRole("HEAD_OFFICE_ADMIN", "BRANCH_MANAGER")
-                // All other requests require authentication
                 .anyRequest().authenticated()
             )
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint((req, res, e) ->
-                    res.sendError(HttpServletResponse.SC_UNAUTHORIZED))
+                    writeError(req, res, HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized",
+                        "Authentication required — provide a valid Bearer token"))
+                .accessDeniedHandler((req, res, e) ->
+                    writeError(req, res, HttpServletResponse.SC_FORBIDDEN, "Forbidden",
+                        "You do not have permission to access this resource"))
             )
             .addFilterAt(jwtAuthenticationFilter, BasicAuthenticationFilter.class)
             .addFilterAfter(jwtAuthorizationFilter, BasicAuthenticationFilter.class);
@@ -76,8 +82,19 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // Prevent Spring Boot from auto-registering these filters as raw servlet filters.
-    // They must only run inside the Spring Security filter chain.
+    private void writeError(HttpServletRequest req, HttpServletResponse res,
+                            int status, String error, String message) throws IOException {
+        res.setStatus(status);
+        res.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        objectMapper.writeValue(res.getWriter(), Map.of(
+                "status", status,
+                "error", error,
+                "message", message,
+                "path", req.getRequestURI(),
+                "timestamp", Instant.now().toString()
+        ));
+    }
+
     @Bean
     public FilterRegistrationBean<JwtAuthenticationFilter> jwtAuthFilterReg(JwtAuthenticationFilter filter) {
         FilterRegistrationBean<JwtAuthenticationFilter> reg = new FilterRegistrationBean<>(filter);

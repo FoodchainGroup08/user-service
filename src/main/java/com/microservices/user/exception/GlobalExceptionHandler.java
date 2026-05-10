@@ -1,6 +1,7 @@
 package com.microservices.user.exception;
 
 import io.jsonwebtoken.JwtException;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -10,62 +11,69 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.time.LocalDateTime;
-import java.util.HashMap;
+import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<Map<String, Object>> handleNotFound(ResourceNotFoundException e) {
-        return errorResponse(HttpStatus.NOT_FOUND, e.getMessage());
+    public ResponseEntity<Map<String, Object>> handleNotFound(ResourceNotFoundException e, HttpServletRequest req) {
+        return errorResponse(HttpStatus.NOT_FOUND, "Not Found", e.getMessage(), req);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Map<String, Object>> handleBadRequest(IllegalArgumentException e) {
-        return errorResponse(HttpStatus.BAD_REQUEST, e.getMessage());
+    public ResponseEntity<Map<String, Object>> handleBadRequest(IllegalArgumentException e, HttpServletRequest req) {
+        return errorResponse(HttpStatus.BAD_REQUEST, "Bad Request", e.getMessage(), req);
     }
 
     @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<Map<String, Object>> handleBadCredentials(BadCredentialsException e) {
-        return errorResponse(HttpStatus.UNAUTHORIZED, "Invalid email or password");
+    public ResponseEntity<Map<String, Object>> handleBadCredentials(BadCredentialsException e, HttpServletRequest req) {
+        return errorResponse(HttpStatus.UNAUTHORIZED, "Unauthorized", "Invalid email or password", req);
     }
 
     @ExceptionHandler(JwtException.class)
-    public ResponseEntity<Map<String, Object>> handleJwtException(JwtException e) {
-        return errorResponse(HttpStatus.UNAUTHORIZED, e.getMessage());
+    public ResponseEntity<Map<String, Object>> handleJwtException(JwtException e, HttpServletRequest req) {
+        return errorResponse(HttpStatus.UNAUTHORIZED, "Unauthorized", e.getMessage(), req);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException e) {
-        return errorResponse(HttpStatus.FORBIDDEN, "Access denied");
+    public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException e, HttpServletRequest req) {
+        return errorResponse(HttpStatus.FORBIDDEN, "Forbidden", "You do not have permission to access this resource", req);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException e) {
-        Map<String, String> fieldErrors = new HashMap<>();
-        for (FieldError err : e.getBindingResult().getFieldErrors()) {
-            fieldErrors.put(err.getField(), err.getDefaultMessage());
-        }
-        Map<String, Object> body = new HashMap<>();
-        body.put("status", HttpStatus.BAD_REQUEST.value());
-        body.put("error", "Validation failed");
+    public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException e, HttpServletRequest req) {
+        Map<String, String> fieldErrors = e.getBindingResult().getFieldErrors().stream()
+                .collect(Collectors.toMap(FieldError::getField, FieldError::getDefaultMessage, (a, b) -> a));
+
+        Map<String, Object> body = baseBody(HttpStatus.BAD_REQUEST, "Validation Failed", req);
+        body.put("message", "One or more fields are invalid");
         body.put("fields", fieldErrors);
-        body.put("timestamp", LocalDateTime.now());
         return ResponseEntity.badRequest().body(body);
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, Object>> handleGeneral(Exception e) {
-        return errorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred");
+    public ResponseEntity<Map<String, Object>> handleGeneral(Exception e, HttpServletRequest req) {
+        return errorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error",
+                "An unexpected error occurred", req);
     }
 
-    private ResponseEntity<Map<String, Object>> errorResponse(HttpStatus status, String message) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("status", status.value());
-        body.put("error", message);
-        body.put("timestamp", LocalDateTime.now());
+    private ResponseEntity<Map<String, Object>> errorResponse(HttpStatus status, String error,
+                                                               String message, HttpServletRequest req) {
+        Map<String, Object> body = baseBody(status, error, req);
+        body.put("message", message);
         return ResponseEntity.status(status).body(body);
+    }
+
+    private Map<String, Object> baseBody(HttpStatus status, String error, HttpServletRequest req) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("status", status.value());
+        body.put("error", error);
+        body.put("path", req.getRequestURI());
+        body.put("timestamp", Instant.now().toString());
+        return body;
     }
 }

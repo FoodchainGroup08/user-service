@@ -18,7 +18,7 @@ import org.springframework.context.annotation.Configuration;
                       "Use POST /api/auth/login to get a JWT, then click 'Authorize' and paste it.",
         contact = @Contact(name = "FoodChain Team")
     ),
-    servers = @Server(url = "/", description = "Local"),
+    servers = @Server(url = "/api", description = "Local"),
     security = @SecurityRequirement(name = "bearerAuth")
 )
 @SecurityScheme(
