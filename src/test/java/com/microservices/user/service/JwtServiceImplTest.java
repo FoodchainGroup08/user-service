@@ -200,6 +200,43 @@ class JwtServiceImplTest {
         assertThrows(JwtException.class, () -> jwtService.validateAccessToken(""));
     }
 
+    @Test
+    @DisplayName("validateAccessToken: maps display-name role claim Admin to ROLE_HEAD_OFFICE_ADMIN")
+    void validateAccessToken_mapsDisplayNameAdmin_toHeadOfficeAuthority() {
+        when(tokenBlacklistService.isBlacklisted(anyString())).thenReturn(false);
+        UUID id = testUser.getId();
+        String token = Jwts.builder()
+                .subject(id.toString())
+                .claim("email", "admin@example.com")
+                .claim("role", "Admin")
+                .id(UUID.randomUUID().toString())
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + 900_000))
+                .signWith(Keys.hmacShaKeyFor(TEST_SECRET.getBytes(StandardCharsets.UTF_8)))
+                .compact();
+
+        UserDetails details = jwtService.validateAccessToken(token);
+
+        assertTrue(details.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_HEAD_OFFICE_ADMIN")));
+    }
+
+    @Test
+    @DisplayName("validateAccessToken: throws JwtException for unknown role claim")
+    void validateAccessToken_throws_forUnknownRoleClaim() {
+        when(tokenBlacklistService.isBlacklisted(anyString())).thenReturn(false);
+        String token = Jwts.builder()
+                .subject(testUser.getId().toString())
+                .claim("role", "SUPERUSER")
+                .id(UUID.randomUUID().toString())
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + 900_000))
+                .signWith(Keys.hmacShaKeyFor(TEST_SECRET.getBytes(StandardCharsets.UTF_8)))
+                .compact();
+
+        assertThrows(JwtException.class, () -> jwtService.validateAccessToken(token));
+    }
+
     // ---- extractUserId / extractJti ----
 
     @Test

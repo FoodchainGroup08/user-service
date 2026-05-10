@@ -70,12 +70,21 @@ public class JwtServiceImpl implements JwtService {
         }
 
         String role = claims.get("role", String.class);
-        String email = claims.get("email", String.class);
+        if (role == null || role.isBlank()) {
+            throw new JwtException("Missing or empty role claim");
+        }
+        // Map display names ("Admin") and enum names (HEAD_OFFICE_ADMIN) to a single Spring authority
+        String authorityRole;
+        try {
+            authorityRole = User.Role.fromDisplayName(role.trim()).name();
+        } catch (IllegalArgumentException e) {
+            throw new JwtException("Unknown role in token: " + role);
+        }
 
         return org.springframework.security.core.userdetails.User.builder()
                 .username(claims.getSubject())
                 .password("")
-                .authorities(List.of(new SimpleGrantedAuthority("ROLE_" + role)))
+                .authorities(List.of(new SimpleGrantedAuthority("ROLE_" + authorityRole)))
                 .build();
     }
 

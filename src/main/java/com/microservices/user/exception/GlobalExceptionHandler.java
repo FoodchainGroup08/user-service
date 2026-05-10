@@ -2,10 +2,12 @@ package com.microservices.user.exception;
 
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -55,6 +57,25 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException e, HttpServletRequest req) {
         return errorResponse(HttpStatus.FORBIDDEN, "Forbidden", "You do not have permission to access this resource", req);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, Object>> handleUnreadable(HttpMessageNotReadableException e, HttpServletRequest req) {
+        return errorResponse(HttpStatus.BAD_REQUEST, "Bad Request",
+                "Malformed request body — check JSON shape and field types", req);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleConstraintViolation(ConstraintViolationException e, HttpServletRequest req) {
+        Map<String, String> violations = e.getConstraintViolations().stream()
+                .collect(Collectors.toMap(
+                        v -> v.getPropertyPath().toString(),
+                        v -> v.getMessage(),
+                        (a, b) -> a));
+        Map<String, Object> body = baseBody(HttpStatus.BAD_REQUEST, "Validation Failed", req);
+        body.put("message", "One or more parameters are invalid");
+        body.put("fields", violations);
+        return ResponseEntity.badRequest().body(body);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: com.microservices.user.service.JwtServiceImplTest
 -------------------------------------------------------------------------------
-Tests run: 17, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.033 s -- in com.microservices.user.service.JwtServiceImplTest
+Tests run: 19, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.151 s -- in com.microservices.user.service.JwtServiceImplTest

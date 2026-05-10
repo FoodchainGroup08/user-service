@@ -61,6 +61,41 @@ class JwtAuthorizationFilterTest {
     }
 
     @Test
+    @DisplayName("doFilterInternal: authenticates from X-User-Id / X-User-Role when Bearer absent (API gateway)")
+    void doFilterInternal_setsAuthentication_fromGatewayHeaders_whenNoBearer() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/v1/admin/users");
+        request.addHeader("X-User-Id", "60987495-7417-4f0c-85ea-a96f526467ec");
+        request.addHeader("X-User-Role", "HEAD_OFFICE_ADMIN");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockFilterChain chain = mock(MockFilterChain.class);
+
+        filter.doFilterInternal(request, response, chain);
+
+        verify(chain).doFilter(request, response);
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        assertNotNull(auth);
+        assertTrue(auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_HEAD_OFFICE_ADMIN")));
+        verifyNoInteractions(jwtService);
+    }
+
+    @Test
+    @DisplayName("doFilterInternal: maps display Admin to ROLE_HEAD_OFFICE_ADMIN for gateway headers")
+    void doFilterInternal_gatewayHeaders_displayAdmin_mapsToHeadOfficeRole() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/v1/admin/users");
+        request.addHeader("X-User-Id", "60987495-7417-4f0c-85ea-a96f526467ec");
+        request.addHeader("X-User-Role", "Admin");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        filter.doFilterInternal(request, response, new MockFilterChain());
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        assertNotNull(auth);
+        assertTrue(auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_HEAD_OFFICE_ADMIN")));
+    }
+
+    @Test
     @DisplayName("doFilterInternal: passes through when Authorization header is not Bearer")
     void doFilterInternal_passesThrough_whenNotBearer() throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/v1/users/me");
