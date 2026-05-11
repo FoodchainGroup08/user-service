@@ -8,9 +8,9 @@ import com.microservices.user.entity.User;
 import com.microservices.user.exception.ResourceNotFoundException;
 import com.microservices.user.repository.UserRepository;
 import com.microservices.user.service.AuthService;
+import com.microservices.user.service.EmailService;
 import com.microservices.user.service.JwtService;
 import com.microservices.user.service.TokenBlacklistService;
-import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -40,6 +40,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final StringRedisTemplate redisTemplate;
     private final RestTemplate restTemplate;
+    private final EmailService emailService;
 
     @Value("${jwt.secret}")
     private String jwtSecret;
@@ -55,6 +56,7 @@ public class AuthServiceImpl implements AuthService {
 
     private static final String REFRESH_PREFIX = "auth:refresh:";
     private static final String RESET_PREFIX   = "auth:reset:";
+    private static final String VERIFY_PREFIX  = "auth:verify:";
 
     // ---- Register ----
 
@@ -70,9 +72,12 @@ public class AuthServiceImpl implements AuthService {
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .role(request.getRole() != null ? request.getRole() : User.Role.CUSTOMER)
                 .branchId(request.getBranchId())
+                .isEmailVerified(false)
                 .build();
 
-        return UserResponse.from(userRepository.save(user));
+        user = userRepository.save(user);
+        sendVerificationToken(user);
+        return UserResponse.from(user);
     }
 
     // ---- Token helpers ----
@@ -168,8 +173,8 @@ public class AuthServiceImpl implements AuthService {
                     Duration.ofHours(1)
             );
             String resetLink = frontendUrl + "/reset-password?token=" + token;
-            // TODO: replace with real email sender (e.g. JavaMailSender / SendGrid)
             log.info("Password reset link for {}: {}", email, resetLink);
+            emailService.sendPasswordResetEmail(user.getEmail(), user.getName(), resetLink);
         });
     }
 
@@ -186,6 +191,45 @@ public class AuthServiceImpl implements AuthService {
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         userRepository.save(user);
         redisTemplate.delete(RESET_PREFIX + token);
+    }
+
+    // ---- Email verification ----
+
+    @Override
+    public void verifyEmail(String token) {
+        String userId = redisTemplate.opsForValue().get(VERIFY_PREFIX + token);
+        if (userId == null) {
+            throw new IllegalArgumentException("Invalid or expired verification token");
+        }
+
+        User user = userRepository.findById(UUID.fromString(userId))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        user.setEmailVerified(true);
+        userRepository.save(user);
+        redisTemplate.delete(VERIFY_PREFIX + token);
+        log.info("Email verified for user: {}", user.getEmail());
+    }
+
+    @Override
+    public void resendVerification(String email) {
+        userRepository.findByEmail(email).ifPresent(user -> {
+            if (!user.isEmailVerified()) {
+                sendVerificationToken(user);
+            }
+        });
+    }
+
+    private void sendVerificationToken(User user) {
+        String token = UUID.randomUUID().toString();
+        redisTemplate.opsForValue().set(
+                VERIFY_PREFIX + token,
+                user.getId().toString(),
+                Duration.ofHours(24)
+        );
+        String verifyLink = frontendUrl + "/verify-email?token=" + token;
+        log.info("Email verification link for {}: {}", user.getEmail(), verifyLink);
+        emailService.sendVerificationEmail(user.getEmail(), user.getName(), verifyLink);
     }
 
     // ---- Google OAuth ----
@@ -205,7 +249,7 @@ public class AuthServiceImpl implements AuthService {
             throw new IllegalArgumentException("Google token verification failed");
         }
 
-        String googleSub = googleInfo.get("sub");   // stable Google user ID
+        String googleSub = googleInfo.get("sub");
         String email     = googleInfo.get("email");
         String name      = googleInfo.get("name");
 
@@ -213,10 +257,11 @@ public class AuthServiceImpl implements AuthService {
                 .findByOauth2ProviderAndOauth2ProviderId("google", googleSub)
                 .orElseGet(() -> userRepository.findByEmail(email)
                         .map(existing -> {
-                            // Link existing account to Google
                             existing.setOauth2Provider("google");
                             existing.setOauth2ProviderId(googleSub);
                             if (existing.getName() == null) existing.setName(name);
+                            // Google-verified emails count as email-verified
+                            existing.setEmailVerified(true);
                             return userRepository.save(existing);
                         })
                         .orElseGet(() -> userRepository.save(
@@ -226,6 +271,7 @@ public class AuthServiceImpl implements AuthService {
                                         .role(User.Role.CUSTOMER)
                                         .oauth2Provider("google")
                                         .oauth2ProviderId(googleSub)
+                                        .isEmailVerified(true)
                                         .build()
                         ))
                 );

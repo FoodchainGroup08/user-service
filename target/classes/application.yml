@@ -21,15 +21,15 @@ spring:
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
   # OAuth2 — uncomment and set OAUTH2_ENABLED=true to activate
-  # security:
-  #   oauth2:
-  #     client:
-  #       registration:
-  #         google:
-  #           client-id: ${GOOGLE_CLIENT_ID}
-  #           client-secret: ${GOOGLE_CLIENT_SECRET}
-  #           scope: openid,email,profile
-  #           redirect-uri: "{baseUrl}/login/oauth2/code/google"
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope: openid,email,profile
+            redirect-uri: "{baseUrl}/login/oauth2/code/google"
   #         github:
   #           client-id: ${GITHUB_CLIENT_ID}
   #           client-secret: ${GITHUB_CLIENT_SECRET}
@@ -37,7 +37,7 @@ spring:
   #           redirect-uri: "{baseUrl}/login/oauth2/code/github"
 
 server:
-  port: 8081
+  port: 8086
   servlet:
     context-path: /api
 
@@ -55,16 +55,29 @@ jwt:
   refresh-token-expiry-ms: 604800000  # 7 days
 
 app:
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}
   oauth2:
     enabled: ${OAUTH2_ENABLED:false}
     # Redirect URL after OAuth2 login (frontend URL)
     redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:5173/oauth2/callback}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+    display-request-duration: true
+  api-docs:
+    path: /v3/api-docs
 
 management:
   endpoints:
     web:
       exposure:
         include: health,info,refresh
+  health:
+    mail:
+      enabled: false
 
 logging:
   level:

@@ -23,6 +23,8 @@ public class UserResponse {
     private UUID branchId;
     @JsonProperty("isActive")
     private boolean isActive;
+    @JsonProperty("isEmailVerified")
+    private boolean isEmailVerified;
     private LocalDateTime createdAt;
 
     public static UserResponse from(User user) {
@@ -33,6 +35,7 @@ public class UserResponse {
                 .role(user.getRole())
                 .branchId(user.getBranchId())
                 .isActive(user.isActive())
+                .isEmailVerified(user.isEmailVerified())
                 .createdAt(user.getCreatedAt())
                 .build();
     }

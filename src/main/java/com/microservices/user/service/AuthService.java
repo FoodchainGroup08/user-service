@@ -28,4 +28,10 @@ public interface AuthService {
 
     /** Validates a Google ID token, then finds or creates a local user and returns a JWT pair. */
     AuthResponse googleAuth(String idToken);
+
+    /** Marks the user's email as verified if the token is valid (24-hour TTL). */
+    void verifyEmail(String token);
+
+    /** Generates a new verification token and logs the link (silently no-ops for unknown or already-verified emails). */
+    void resendVerification(String email);
 }

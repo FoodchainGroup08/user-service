@@ -1,31 +1,44 @@
 package com.microservices.user.config;
 
-import io.swagger.v3.oas.annotations.OpenAPIDefinition;
-import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
-import io.swagger.v3.oas.annotations.info.Contact;
-import io.swagger.v3.oas.annotations.info.Info;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import io.swagger.v3.oas.annotations.security.SecurityScheme;
-import io.swagger.v3.oas.annotations.servers.Server;
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Contact;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
+import io.swagger.v3.oas.models.servers.Server;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.List;
+
 @Configuration
-@OpenAPIDefinition(
-    info = @Info(
-        title = "User Service API",
-        version = "1.0",
-        description = "Authentication and user management for the FoodChain platform. " +
-                      "Use POST /api/auth/login to get a JWT, then click 'Authorize' and paste it.",
-        contact = @Contact(name = "FoodChain Team")
-    ),
-    servers = @Server(url = "/", description = "Local"),
-    security = @SecurityRequirement(name = "bearerAuth")
-)
-@SecurityScheme(
-    name = "bearerAuth",
-    type = SecuritySchemeType.HTTP,
-    scheme = "bearer",
-    bearerFormat = "JWT",
-    description = "Paste your access token (without 'Bearer' prefix)"
-)
-public class OpenApiConfig {}
+public class OpenApiConfig {
+
+    @Bean
+    public OpenAPI userServiceOpenAPI() {
+        return new OpenAPI()
+                .info(new Info()
+                        .title("FoodChain — Authentication Service API")
+                        .description("User registration, login, JWT token management, Google OAuth2, and role-based access control.")
+                        .version("v1.0.0")
+                        .contact(new Contact()
+                                .name("FoodchainGroup08")
+                                .email("team@foodchain.com")))
+                .servers(List.of(
+                        new Server()
+                                .url("http://localhost:8080/api")
+                                .description("API Gateway"),
+                        new Server()
+                                .url("http://localhost:8086/api")
+                                .description("User Service direct (local dev)")))
+                .addSecurityItem(new SecurityRequirement().addList("Bearer Authentication"))
+                .components(new Components()
+                        .addSecuritySchemes("Bearer Authentication",
+                                new SecurityScheme()
+                                        .type(SecurityScheme.Type.HTTP)
+                                        .scheme("bearer")
+                                        .bearerFormat("JWT")
+                                        .description("Paste your JWT token. Get it from POST /api/auth/login")));
+    }
+}
