@@ -64,7 +64,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        if (loginRequest.getPassword() == null)) {
+        if (loginRequest.getPassword() == null) {
             writeError(response, HttpStatus.BAD_REQUEST,
                     "your password can not be null");
             return;
