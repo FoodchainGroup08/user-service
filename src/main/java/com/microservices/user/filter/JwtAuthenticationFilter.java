@@ -23,14 +23,14 @@ import java.io.IOException;
 import java.util.Map;
 
 /**
- * Intercepts POST /auth/login. Validates email/password format via regex, then authenticates
+ * Intercepts POST /v1/auth/login. Validates email/password format via regex, then authenticates
  * credentials via AuthenticationManager and writes a JWT AuthResponse.
  */
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private static final String LOGIN_PATH = "/auth/login";
+    private static final String LOGIN_PATH = "/v1/auth/login";
 
     private static final String EMAIL_REGEX =
             "^[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$";
