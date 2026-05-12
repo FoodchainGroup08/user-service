@@ -6,6 +6,7 @@ import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 public class EmailServiceImpl implements EmailService {
 
     private final JavaMailSender mailSender;
+    private final BrevoEmailService brevoEmailService;
 
     @Value("${app.mail.from}")
     private String fromAddress;
@@ -125,9 +127,14 @@ public class EmailServiceImpl implements EmailService {
             helper.setSubject(subject);
             helper.setText(html, true);
             mailSender.send(message);
-            log.info("Email sent to {}: {}", to, subject);
-        } catch (MessagingException e) {
-            log.error("Failed to send email to {}: {}", to, e.getMessage());
+            log.info("Email sent via Gmail to {}: {}", to, subject);
+        } catch (MessagingException | MailException e) {
+            log.warn("Gmail SMTP failed for {} ({}), trying Brevo fallback...", to, e.getMessage());
+            try {
+                brevoEmailService.send(to, null, subject, html);
+            } catch (Exception brevoEx) {
+                log.error("Brevo fallback also failed for {}: {}", to, brevoEx.getMessage());
+            }
         }
     }
 }

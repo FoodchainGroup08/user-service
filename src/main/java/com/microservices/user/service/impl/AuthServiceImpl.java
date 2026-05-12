@@ -54,6 +54,9 @@ public class AuthServiceImpl implements AuthService {
     @Value("${app.frontend-url:http://localhost:5173}")
     private String frontendUrl;
 
+    @Value("${app.api-base-url:http://localhost:8086/api}")
+    private String apiBaseUrl;
+
     private static final String REFRESH_PREFIX = "auth:refresh:";
     private static final String RESET_PREFIX   = "auth:reset:";
     private static final String VERIFY_PREFIX  = "auth:verify:";
@@ -227,7 +230,7 @@ public class AuthServiceImpl implements AuthService {
                 user.getId().toString(),
                 Duration.ofHours(24)
         );
-        String verifyLink = frontendUrl + "/verify-email?token=" + token;
+        String verifyLink = apiBaseUrl + "/v1/auth/verify-email?token=" + token;
         log.info("Email verification link for {}: {}", user.getEmail(), verifyLink);
         emailService.sendVerificationEmail(user.getEmail(), user.getName(), verifyLink);
     }

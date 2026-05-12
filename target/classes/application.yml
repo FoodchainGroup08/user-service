@@ -20,6 +20,20 @@ spring:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
+  mail:
+    host: ${EMAIL_HOST:${SPRING_MAIL_HOST:smtp.gmail.com}}
+    port: ${EMAIL_PORT:${SPRING_MAIL_PORT:587}}
+    username: ${EMAIL_USER:${SPRING_MAIL_USERNAME:}}
+    password: ${EMAIL_PASS:${SPRING_MAIL_PASSWORD:}}
+    protocol: smtp
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
   # OAuth2 — uncomment and set OAUTH2_ENABLED=true to activate
   security:
     oauth2:
@@ -56,6 +70,13 @@ jwt:
 
 app:
   frontend-url: ${FRONTEND_URL:http://localhost:5173}
+  api-base-url: ${APP_API_BASE_URL:http://localhost:8086/api}
+  mail:
+    from: ${APP_MAIL_FROM:${EMAIL_USER:${SPRING_MAIL_USERNAME:noreply@foodchain.local}}}
+  brevo:
+    api-key: ${BREVO_API_KEY:}
+    sender-email: ${BREVO_SENDER_EMAIL:}
+    sender-name: ${BREVO_SENDER_NAME:FoodChain}
   oauth2:
     enabled: ${OAUTH2_ENABLED:false}
     # Redirect URL after OAuth2 login (frontend URL)
