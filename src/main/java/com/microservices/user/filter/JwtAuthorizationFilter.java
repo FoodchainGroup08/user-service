@@ -12,18 +12,22 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 /**
- * Runs after JwtAuthenticationFilter. Extracts Bearer token from Authorization header,
- * validates it, and populates the SecurityContext.
+ * Runs after JwtAuthenticationFilter. Populates SecurityContext either from
+ * gateway-forwarded identity headers (X-User-Id / X-User-Role) or, for direct
+ * calls, from a Bearer JWT token.
  */
 @Component
 @RequiredArgsConstructor
@@ -37,6 +41,24 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain chain) throws ServletException, IOException {
 
+        // Gateway pre-validated the token and forwarded identity headers
+        String userId = request.getHeader("X-User-Id");
+        if (userId != null && !userId.isBlank()) {
+            String role = request.getHeader("X-User-Role");
+            List<SimpleGrantedAuthority> authorities = (role != null && !role.isBlank())
+                    ? List.of(new SimpleGrantedAuthority("ROLE_" + role))
+                    : List.of();
+
+            UserDetails principal = User.withUsername(userId).password("").authorities(authorities).build();
+            UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(principal, null, authorities);
+            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            chain.doFilter(request, response);
+            return;
+        }
+
+        // Direct call (no gateway) — validate Bearer token
         String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             chain.doFilter(request, response);
