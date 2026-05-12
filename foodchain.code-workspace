@@ -1,0 +1,43 @@
+{
+  "folders": [
+    {
+      "path": "."
+    },
+    {
+      "path": "../analytics-report-service"
+    },
+    {
+      "path": "../api-gateway"
+    },
+    {
+      "path": "../branch-service"
+    },
+    {
+      "path": "../config-server"
+    },
+    {
+      "path": "../eureka-server"
+    },
+    {
+      "path": "../foodchain-config"
+    },
+    {
+      "path": "../foodchain-deployment"
+    },
+    {
+      "path": "../frontend"
+    },
+    {
+      "path": "../kitchen-service"
+    },
+    {
+      "path": "../menu-service"
+    },
+    {
+      "path": "../notifications-service"
+    },
+    {
+      "path": "../order-service"
+    }
+  ]
+}
