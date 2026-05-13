@@ -1,5 +1,6 @@
 package com.microservices.user.controller;
 
+import com.microservices.user.dto.UpdateProfileRequest;
 import com.microservices.user.dto.UpdateUserRequest;
 import com.microservices.user.dto.UserResponse;
 import com.microservices.user.service.UserService;
@@ -35,6 +36,22 @@ public class UserController {
     @GetMapping("/me")
     public ResponseEntity<UserResponse> getCurrentUser(@AuthenticationPrincipal UserDetails principal) {
         return ResponseEntity.ok(userService.findById(UUID.fromString(principal.getUsername())));
+    }
+
+    @Operation(
+        summary = "Update the current user's profile",
+        description = "Allows any authenticated user to update their own name, saved address, and location coordinates. " +
+                      "All fields are optional — only provided fields are updated.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Profile updated"),
+        @ApiResponse(responseCode = "401", description = "Not authenticated")
+    })
+    @PatchMapping("/me")
+    public ResponseEntity<UserResponse> updateMyProfile(
+            @AuthenticationPrincipal UserDetails principal,
+            @RequestBody UpdateProfileRequest request) {
+        return ResponseEntity.ok(
+                userService.updateProfile(UUID.fromString(principal.getUsername()), request));
     }
 
     @Operation(summary = "List all users (HEAD_OFFICE_ADMIN only)")

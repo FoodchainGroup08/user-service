@@ -1,5 +1,6 @@
 package com.microservices.user.service;
 
+import com.microservices.user.dto.UpdateProfileRequest;
 import com.microservices.user.dto.UpdateUserRequest;
 import com.microservices.user.dto.UserResponse;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -16,4 +17,6 @@ public interface UserService extends UserDetailsService {
     List<UserResponse> findAll();
 
     UserResponse updateUser(UUID id, UpdateUserRequest request);
+
+    UserResponse updateProfile(UUID id, UpdateProfileRequest request);
 }

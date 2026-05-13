@@ -1,5 +1,6 @@
 package com.microservices.user.service.impl;
 
+import com.microservices.user.dto.UpdateProfileRequest;
 import com.microservices.user.dto.UpdateUserRequest;
 import com.microservices.user.dto.UserResponse;
 import com.microservices.user.entity.User;
@@ -64,6 +65,20 @@ public class UserServiceImpl implements UserService {
         if (request.getIsActive() != null) {
             user.setActive(request.getIsActive());
         }
+
+        return UserResponse.from(userRepository.save(user));
+    }
+
+    @Override
+    @Transactional
+    public UserResponse updateProfile(UUID id, UpdateProfileRequest request) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + id));
+
+        if (request.getName()        != null) user.setName(request.getName());
+        if (request.getAddressLine() != null) user.setAddressLine(request.getAddressLine());
+        if (request.getLatitude()    != null) user.setLatitude(request.getLatitude());
+        if (request.getLongitude()   != null) user.setLongitude(request.getLongitude());
 
         return UserResponse.from(userRepository.save(user));
     }

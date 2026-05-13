@@ -54,6 +54,15 @@ public class User implements UserDetails {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "address_line", columnDefinition = "TEXT")
+    private String addressLine;
+
+    @Column(name = "latitude")
+    private Double latitude;
+
+    @Column(name = "longitude")
+    private Double longitude;
+
     // OAuth2 provider fields
     @Column(name = "oauth2_provider")
     private String oauth2Provider;

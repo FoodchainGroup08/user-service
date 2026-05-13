@@ -26,6 +26,9 @@ public class UserResponse {
     @JsonProperty("isEmailVerified")
     private boolean isEmailVerified;
     private LocalDateTime createdAt;
+    private String addressLine;
+    private Double latitude;
+    private Double longitude;
 
     public static UserResponse from(User user) {
         return UserResponse.builder()
@@ -37,6 +40,9 @@ public class UserResponse {
                 .isActive(user.isActive())
                 .isEmailVerified(user.isEmailVerified())
                 .createdAt(user.getCreatedAt())
+                .addressLine(user.getAddressLine())
+                .latitude(user.getLatitude())
+                .longitude(user.getLongitude())
                 .build();
     }
 }
