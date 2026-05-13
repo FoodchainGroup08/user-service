@@ -31,6 +31,14 @@ spring:
           auth: ${MAIL_SMTP_AUTH:false}
           starttls:
             enable: ${MAIL_SMTP_STARTTLS_ENABLE:false}
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      retries: 3
+
   # OAuth2 — uncomment and set OAUTH2_ENABLED=true to activate
   security:
     oauth2:
@@ -69,6 +77,9 @@ app:
   frontend-url: ${FRONTEND_URL:http://localhost:5173}
   mail:
     from: ${MAIL_FROM:no-reply@foodchain.local}
+  kafka:
+    topic:
+      email-send: ${APP_KAFKA_TOPIC_EMAIL_SEND:notification.email.send}
   oauth2:
     enabled: ${OAUTH2_ENABLED:false}
     # Redirect URL after OAuth2 login (frontend URL)

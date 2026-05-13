@@ -1,26 +1,28 @@
 package com.microservices.user.service.impl;
 
+import com.microservices.user.kafka.KafkaEmailProducer;
 import com.microservices.user.service.EmailService;
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.MailException;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+/**
+ * Publishes transactional email events to the {@code notification.email.send} Kafka topic.
+ * The notifications-service consumes that topic and delivers via Brevo.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class EmailServiceImpl implements EmailService {
 
-    private final JavaMailSender mailSender;
+    private final KafkaEmailProducer kafkaEmailProducer;
 
-    @Value("${app.mail.from}")
+    @Value("${app.mail.from:no-reply@foodchain.local}")
     private String fromAddress;
+
+    // ── Verification ──────────────────────────────────────────────────────────
 
     @Override
     @Async
@@ -32,7 +34,8 @@ public class EmailServiceImpl implements EmailService {
                 <body style="font-family:Arial,sans-serif;background:#f4f4f4;margin:0;padding:0;">
                   <table width="100%%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:30px 0;">
                     <tr><td align="center">
-                      <table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;">
+                      <table width="560" cellpadding="0" cellspacing="0"
+                             style="background:#ffffff;border-radius:8px;overflow:hidden;">
                         <tr><td style="background:#e85d04;padding:28px 32px;">
                           <h1 style="color:#ffffff;margin:0;font-size:22px;">FoodChain</h1>
                         </td></tr>
@@ -56,7 +59,7 @@ public class EmailServiceImpl implements EmailService {
                           </p>
                           <hr style="border:none;border-top:1px solid #eee;margin:24px 0;">
                           <p style="color:#bbb;font-size:12px;text-align:center;">
-                            FoodChain &mdash; Group 08 Capstone Project
+                            FoodChain &mdash; Multi-Branch Restaurant Platform
                           </p>
                         </td></tr>
                       </table>
@@ -64,10 +67,13 @@ public class EmailServiceImpl implements EmailService {
                   </table>
                 </body>
                 </html>
-                """.formatted(name, verifyLink);
+                """.formatted(escapeHtml(name), verifyLink);
 
-        send(to, subject, html);
+        kafkaEmailProducer.sendEmail(to, name, subject, html, "EMAIL_VERIFICATION");
+        log.info("Queued verification email for {}", to);
     }
+
+    // ── Password reset ────────────────────────────────────────────────────────
 
     @Override
     @Async
@@ -79,7 +85,8 @@ public class EmailServiceImpl implements EmailService {
                 <body style="font-family:Arial,sans-serif;background:#f4f4f4;margin:0;padding:0;">
                   <table width="100%%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:30px 0;">
                     <tr><td align="center">
-                      <table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;">
+                      <table width="560" cellpadding="0" cellspacing="0"
+                             style="background:#ffffff;border-radius:8px;overflow:hidden;">
                         <tr><td style="background:#e85d04;padding:28px 32px;">
                           <h1 style="color:#ffffff;margin:0;font-size:22px;">FoodChain</h1>
                         </td></tr>
@@ -104,7 +111,7 @@ public class EmailServiceImpl implements EmailService {
                           </p>
                           <hr style="border:none;border-top:1px solid #eee;margin:24px 0;">
                           <p style="color:#bbb;font-size:12px;text-align:center;">
-                            FoodChain &mdash; Group 08 Capstone Project
+                            FoodChain &mdash; Multi-Branch Restaurant Platform
                           </p>
                         </td></tr>
                       </table>
@@ -112,23 +119,64 @@ public class EmailServiceImpl implements EmailService {
                   </table>
                 </body>
                 </html>
-                """.formatted(name, resetLink);
+                """.formatted(escapeHtml(name), resetLink);
 
-        send(to, subject, html);
+        kafkaEmailProducer.sendEmail(to, name, subject, html, "PASSWORD_RESET");
+        log.info("Queued password-reset email for {}", to);
     }
 
-    private void send(String to, String subject, String html) {
-        try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            helper.setFrom(fromAddress);
-            helper.setTo(to);
-            helper.setSubject(subject);
-            helper.setText(html, true);
-            mailSender.send(message);
-            log.info("Email sent to {}: {}", to, subject);
-        } catch (MessagingException | MailException e) {
-            log.error("Failed to send email to {}: {}", to, e.getMessage());
-        }
+    // ── Sign-in notification ──────────────────────────────────────────────────
+
+    @Override
+    @Async
+    public void sendSignInEmail(String to, String name) {
+        String subject = "FoodChain — New sign-in to your account";
+        String html = """
+                <!DOCTYPE html>
+                <html>
+                <body style="font-family:Arial,sans-serif;background:#f4f4f4;margin:0;padding:0;">
+                  <table width="100%%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:30px 0;">
+                    <tr><td align="center">
+                      <table width="560" cellpadding="0" cellspacing="0"
+                             style="background:#ffffff;border-radius:8px;overflow:hidden;">
+                        <tr><td style="background:#e85d04;padding:28px 32px;">
+                          <h1 style="color:#ffffff;margin:0;font-size:22px;">FoodChain</h1>
+                        </td></tr>
+                        <tr><td style="padding:32px;">
+                          <h2 style="color:#222;margin-top:0;">Welcome back, %s!</h2>
+                          <p style="color:#555;line-height:1.6;">
+                            We noticed a new sign-in to your FoodChain account.
+                            If this was you, no action is needed.
+                          </p>
+                          <p style="color:#555;line-height:1.6;">
+                            If you did not sign in, please
+                            <a href="#" style="color:#e85d04;">reset your password</a> immediately.
+                          </p>
+                          <hr style="border:none;border-top:1px solid #eee;margin:24px 0;">
+                          <p style="color:#bbb;font-size:12px;text-align:center;">
+                            FoodChain &mdash; Multi-Branch Restaurant Platform
+                          </p>
+                        </td></tr>
+                      </table>
+                    </td></tr>
+                  </table>
+                </body>
+                </html>
+                """.formatted(escapeHtml(name));
+
+        kafkaEmailProducer.sendEmail(to, name, subject, html, "SIGN_IN");
+        log.info("Queued sign-in notification email for {}", to);
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private String escapeHtml(String value) {
+        if (value == null) return "";
+        return value
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#39;");
     }
 }

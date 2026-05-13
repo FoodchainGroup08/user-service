@@ -5,6 +5,7 @@ import com.microservices.user.dto.AuthResponse;
 import com.microservices.user.dto.LoginRequest;
 import com.microservices.user.entity.User;
 import com.microservices.user.service.AuthService;
+import com.microservices.user.service.EmailService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -41,6 +42,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final AuthenticationManager authenticationManager;
     private final AuthService authService;
     private final ObjectMapper objectMapper;
+    private final EmailService emailService;
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
@@ -77,6 +79,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             User user = (User) authentication.getPrincipal();
             AuthResponse authResponse = authService.buildAuthResponse(user);
+
+            emailService.sendSignInEmail(user.getEmail(), user.getName());
 
             response.setStatus(HttpStatus.OK.value());
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
