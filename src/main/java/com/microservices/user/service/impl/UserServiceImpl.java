@@ -71,6 +71,15 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    public UserResponse updateUserStatus(UUID id, boolean active) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + id));
+        user.setActive(active);
+        return UserResponse.from(userRepository.save(user));
+    }
+
+    @Override
+    @Transactional
     public UserResponse updateProfile(UUID id, UpdateProfileRequest request) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + id));

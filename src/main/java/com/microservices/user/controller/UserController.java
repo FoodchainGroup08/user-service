@@ -89,4 +89,18 @@ public class UserController {
                                                    @RequestBody UpdateUserRequest request) {
         return ResponseEntity.ok(userService.updateUser(id, request));
     }
+
+    @Operation(summary = "Activate or deactivate a user account (HEAD_OFFICE_ADMIN only)")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Status updated"),
+        @ApiResponse(responseCode = "403", description = "Insufficient role"),
+        @ApiResponse(responseCode = "404", description = "User not found")
+    })
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasRole('HEAD_OFFICE_ADMIN')")
+    public ResponseEntity<UserResponse> updateUserStatus(@PathVariable UUID id,
+                                                         @RequestBody java.util.Map<String, String> body) {
+        boolean active = "active".equalsIgnoreCase(body.get("status"));
+        return ResponseEntity.ok(userService.updateUserStatus(id, active));
+    }
 }

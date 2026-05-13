@@ -19,4 +19,6 @@ public interface UserService extends UserDetailsService {
     UserResponse updateUser(UUID id, UpdateUserRequest request);
 
     UserResponse updateProfile(UUID id, UpdateProfileRequest request);
+
+    UserResponse updateUserStatus(UUID id, boolean active);
 }
