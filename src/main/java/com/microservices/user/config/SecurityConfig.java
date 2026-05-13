@@ -56,8 +56,11 @@ public class SecurityConfig {
                 // Swagger UI
                 .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                 // Role-based access
-                .requestMatchers(HttpMethod.GET, "/users").hasRole("HEAD_OFFICE_ADMIN")
-                .requestMatchers(HttpMethod.PATCH, "/users/*").hasAnyRole("HEAD_OFFICE_ADMIN", "BRANCH_MANAGER")
+                .requestMatchers(HttpMethod.GET, "/v1/users/me").authenticated()
+                .requestMatchers(HttpMethod.PATCH, "/v1/users/me").authenticated()
+                .requestMatchers(HttpMethod.GET, "/v1/users").hasRole("HEAD_OFFICE_ADMIN")
+                .requestMatchers(HttpMethod.GET, "/v1/users/*").hasAnyRole("HEAD_OFFICE_ADMIN", "BRANCH_MANAGER")
+                .requestMatchers(HttpMethod.PATCH, "/v1/users/*").hasAnyRole("HEAD_OFFICE_ADMIN", "BRANCH_MANAGER")
                 // All other requests require authentication
                 .anyRequest().authenticated()
             )
